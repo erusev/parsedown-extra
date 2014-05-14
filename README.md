@@ -9,7 +9,7 @@ Include both `Parsedown.php` and `ParsedownExtra.php` or install [the composer p
 ### Example
 
 ``` php
-$Parsedown = new ParsedownExtra();
+$Instance = new ParsedownExtra();
 
-echo $Parsedown->text('Hello _Parsedown_!'); # prints: <p>Hello <em>Parsedown</em>!</p>
+echo $Instance->text('Hello _Parsedown Extra_!'); # prints: <p>Hello <em>Parsedown Extra</em>!</p>
 ```
