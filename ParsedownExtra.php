@@ -323,7 +323,7 @@ class ParsedownExtra extends Parsedown
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
-                'attributes' => array('id' => 'fn:'.$name),
+                'attributes' => array('id' => 'fn:'.($name+1)),
                 'handler' => 'elements',
                 'text' => array(
                     array(
