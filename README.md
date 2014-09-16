@@ -2,7 +2,7 @@
 
 An extension of [Parsedown](http://parsedown.org) that adds support for [Markdown Extra](http://en.wikipedia.org/wiki/Markdown_Extra).
 
-[[ demo ]](http://parsedown.org/demo?extra=1)
+[[ demo ]](http://parsedown.org/extra/)
 
 ### Installation
 
