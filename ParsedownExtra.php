@@ -358,9 +358,13 @@ class ParsedownExtra extends Parsedown
 
         foreach ($this->Definitions['Footnote'] as $name => $Data)
         {
-            if ( ! isset($Data['number']))
+            if ( ! isset($Data["name"]))
             {
                 continue;
+            }
+            else 
+            {
+              $name = $Data["name"];
             }
 
             $text = $Data['text'];
