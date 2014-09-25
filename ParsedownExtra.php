@@ -238,6 +238,7 @@ class ParsedownExtra extends Parsedown
             $Footnote = array(
                 'id' => $matches[1],
                 'data' => array(
+					'name' => $matches[1],
                     'text' => $matches[2],
                     'count' => null,
                     'number' => null,
@@ -367,12 +368,12 @@ class ParsedownExtra extends Parsedown
 
             foreach (range(1, $Data['count']) as $number)
             {
-                $text .= '&#160;<a href="#fnref'.$number.':'.($name+1).'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $text .= '&#160;<a href="#fnref'.$number.':'.$Data['name'].'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
-                'attributes' => array('id' => 'fn:'.($name+1)),
+                'attributes' => array('id' => 'fn:'.$Data['name']),
                 'handler' => 'elements',
                 'text' => array(
                     array(
