@@ -238,7 +238,7 @@ class ParsedownExtra extends Parsedown
             $Footnote = array(
                 'id' => $matches[1],
                 'data' => array(
-					'name' => $matches[1],
+                    'name' => $matches[1],
                     'text' => $matches[2],
                     'count' => null,
                     'number' => null,
