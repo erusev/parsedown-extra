@@ -352,21 +352,17 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
+        foreach ($this->Definitions['Footnote'] as $name => $Data) {
+            $this->Definitions['Footnote'][$name]["name"] = $name;
+        }
+
         usort($this->Definitions['Footnote'], function($A, $B) {
             return $A['number'] - $B['number'];
         });
 
         foreach ($this->Definitions['Footnote'] as $name => $Data)
         {
-            if ( ! isset($Data["name"]))
-            {
-                continue;
-            }
-            else 
-            {
-              $name = $Data["name"];
-            }
-
+            $name = $Data["name"];
             $text = $Data['text'];
             $text = $this->line($text);
 
