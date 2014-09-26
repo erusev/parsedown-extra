@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "erusev/parsedown": "~1.0"
+        "erusev/parsedown": "~1.1"
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
