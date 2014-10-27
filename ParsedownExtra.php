@@ -368,12 +368,12 @@ class ParsedownExtra extends Parsedown
 
             foreach (range(1, $Data['count']) as $number)
             {
-                $text .= '&#160;<a href="#fnref'.$number.':'.$name.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $text .= '&#160;<a href="#fnref'.$number.':'.($name + 1).'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
-                'attributes' => array('id' => 'fn:'.$name),
+                'attributes' => array('id' => 'fn:'.($name + 1)),
                 'handler' => 'elements',
                 'text' => array(
                     array(
