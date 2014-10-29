@@ -352,7 +352,7 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
-        usort($this->Definitions['Footnote'], function($A, $B) {
+        uasort($this->Definitions['Footnote'], function($A, $B) {
             return $A['number'] - $B['number'];
         });
 
