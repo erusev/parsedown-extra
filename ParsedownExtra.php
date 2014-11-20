@@ -166,7 +166,7 @@ class ParsedownExtra extends Parsedown
     {
         $DOMDocument = new DOMDocument;
 
-        $DOMDocument->loadXML($Block['element'], LIBXML_NOERROR | LIBXML_NOWARNING);
+        $DOMDocument->loadHTML($Block['element'], LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         if ($DOMDocument->documentElement === null)
         {
@@ -183,25 +183,45 @@ class ParsedownExtra extends Parsedown
         $DOMDocument->documentElement->removeAttribute('markdown');
 
         $index = 0;
-        $texts = array();
+        $nestedElements = array();
+
+        $markdown = '';
 
         foreach ($DOMDocument->documentElement->childNodes as $Node)
         {
             if ($Node instanceof DOMText)
             {
-                $texts [] = $this->text($Node->nodeValue);
+                $markdown .= $Node->nodeValue;
+            }
+            elseif ($Node instanceof DOMNode)
+            {
+                $nestedElements []= $DOMDocument->saveHTML($Node);
 
-                # replaces the text of the node with a placeholder
-                $Node->nodeValue = '\x1A'.$index ++;
+                # replace nested elements with placeholders
+                $markdown .= '\x1A'.$index ++;
+            }
+            else
+            {
+                continue;
             }
         }
 
-        $markup = $DOMDocument->saveXML($DOMDocument->documentElement);
-
-        foreach ($texts as $index => $text)
+        foreach ($nestedElements as $index => $text)
         {
-            $markup = str_replace('\x1A'.$index, $text, $markup);
+            $markdown = str_replace('\x1A'.$index, $text, $markdown);
         }
+
+        $markup = $this->text($markdown);
+
+        $DOMDocument->documentElement->nodeValue = '';
+
+        $Fragment = $DOMDocument->createDocumentFragment();
+
+        $Fragment->appendXML($markup);
+
+        $DOMDocument->documentElement->appendChild($Fragment);
+
+        $markup = $DOMDocument->saveHTML();
 
         $Block['element'] = $markup;
 
