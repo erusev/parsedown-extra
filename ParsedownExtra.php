@@ -166,7 +166,7 @@ class ParsedownExtra extends Parsedown
     {
         $DOMDocument = new DOMDocument;
 
-        $DOMDocument->loadHTML($Block['element'], LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $DOMDocument->loadXML($Block['element'], LIBXML_NOERROR | LIBXML_NOWARNING);
 
         if ($DOMDocument->documentElement === null)
         {
@@ -195,7 +195,7 @@ class ParsedownExtra extends Parsedown
             }
             elseif ($Node instanceof DOMNode)
             {
-                $nestedElements []= $DOMDocument->saveHTML($Node);
+                $nestedElements []= $DOMDocument->saveXML($Node);
 
                 # replace nested elements with placeholders
                 $markdown .= '\x1A'.$index ++;
@@ -221,7 +221,7 @@ class ParsedownExtra extends Parsedown
 
         $DOMDocument->documentElement->appendChild($Fragment);
 
-        $markup = $DOMDocument->saveHTML();
+        $markup = $DOMDocument->saveXML($DOMDocument->documentElement);
 
         $Block['element'] = $markup;
 
