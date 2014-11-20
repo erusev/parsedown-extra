@@ -198,7 +198,7 @@ class ParsedownExtra extends Parsedown
                 $nestedElements []= $DOMDocument->saveXML($Node);
 
                 # replace nested elements with placeholders
-                $markdown .= '\x1A'.$index ++;
+                $markdown .= '\x1A'.$index ++.'/';
             }
             else
             {
@@ -208,7 +208,7 @@ class ParsedownExtra extends Parsedown
 
         foreach ($nestedElements as $index => $text)
         {
-            $markdown = str_replace('\x1A'.$index, $text, $markdown);
+            $markdown = str_replace('\x1A'.$index.'/', $text, $markdown);
         }
 
         $markup = $this->text($markdown);
