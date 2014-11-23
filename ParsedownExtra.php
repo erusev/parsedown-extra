@@ -408,10 +408,10 @@ class ParsedownExtra extends Parsedown
     }
 
     #
-    # Private
+    # ~
     #
 
-    private function parseAttributes($attributeString)
+    protected function parseAttributes($attributeString)
     {
         $Data = array();
 
@@ -437,5 +437,5 @@ class ParsedownExtra extends Parsedown
         return $Data;
     }
 
-    private $attributesPattern = '{((?:[#.][-\w]+[ ]*)+)}';
+    protected $attributesPattern = '{((?:[#.][-\w]+[ ]*)+)}';
 }
