@@ -206,22 +206,18 @@ class ParsedownExtra extends Parsedown
             }
         }
 
-        foreach ($nestedElements as $index => $text)
+        foreach ($nestedElements as $index => $nestedElement)
         {
-            $markdown = str_replace('\x1A'.$index.'/', $text, $markdown);
+            $markdown = str_replace('\x1A'.$index.'/', $nestedElement, $markdown);
         }
 
-        $markup = $this->text($markdown);
+        $text = $this->text($markdown);
 
-        $DOMDocument->documentElement->nodeValue = '';
-
-        $Fragment = $DOMDocument->createDocumentFragment();
-
-        $Fragment->appendXML($markup);
-
-        $DOMDocument->documentElement->appendChild($Fragment);
+        # because we don't want markup to get encoded
+        $DOMDocument->documentElement->nodeValue = 'placeholder';
 
         $markup = $DOMDocument->saveXML($DOMDocument->documentElement);
+        $markup = str_replace('placeholder', $text, $markup);
 
         $Block['element'] = $markup;
 
