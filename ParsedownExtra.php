@@ -386,7 +386,9 @@ class ParsedownExtra extends Parsedown
             $text = $Data['text'];
             $text = $this->line($text);
 
-            foreach (range(1, $Data['count']) as $number)
+            $numbers = range(1, $Data['count']);
+
+            foreach ($numbers as $number)
             {
                 $text .= '&#160;<a href="#fnref'.$number.':'.$name.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
