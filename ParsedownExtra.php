@@ -295,7 +295,7 @@ class ParsedownExtra extends Parsedown
                 'handler' => 'element',
                 'text' => array(
                     'name' => 'a',
-                    'attributes' => array('href' => '#fn:'.$name, 'class' => 'footnote-ref'),
+                    'attributes' => array('href' => '#fn:'.($name-1), 'class' => 'footnote-ref'),
                     'text' => $this->Definitions['Footnote'][$name]['number'],
                 ),
             );
@@ -386,7 +386,7 @@ class ParsedownExtra extends Parsedown
 
             foreach ($numbers as $number)
             {
-                $text .= '&#160;<a href="#fnref'.$number.':'.$name.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $text .= '&#160;<a href="#fnref'.$number.':'.($name+1).'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
             $Element['text'][1]['text'] []= array(
