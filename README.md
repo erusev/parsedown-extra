@@ -1,5 +1,7 @@
 ## Parsedown Extra
 
+[![Build Status](https://travis-ci.org/erusev/parsedown-extra.svg)](https://travis-ci.org/erusev/parsedown-extra)
+
 An extension of [Parsedown](http://parsedown.org) that adds support for [Markdown Extra](http://en.wikipedia.org/wiki/Markdown_Extra).
 
 [[ demo ]](http://parsedown.org/extra/)
