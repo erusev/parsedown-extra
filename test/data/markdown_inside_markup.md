@@ -7,3 +7,12 @@ This is another paragraph. It contains <em>inline markup</em>.
 This is block-level markup. No *markdown* here.
 </div>
 </div>
+
+---
+
+<div markdown="1">
+*markdown*
+<div markdown="1">
+_markdown_
+</div>
+</div>
