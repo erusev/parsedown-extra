@@ -65,11 +65,11 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockHeader($Line);
 
-        if (preg_match('/[ #]*'.$this->attributesPattern.'[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
 
-            $Block['element']['attributes'] = $this->parseAttributes($attributeString);
+            $Block['element']['attributes'] = $this->attributeData($attributeString);
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
@@ -147,11 +147,11 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockSetextHeader($Line, $Block);
 
-        if (preg_match('/[ ]*'.$this->attributesPattern.'[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
 
-            $Block['element']['attributes'] = $this->parseAttributes($attributeString);
+            $Block['element']['attributes'] = $this->attributeData($attributeString);
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
@@ -263,9 +263,9 @@ class ParsedownExtra extends Parsedown
 
         $remainder = substr($excerpt, $Span['extent']);
 
-        if (preg_match('/^[ ]*'.$this->attributesPattern.'/', $remainder, $matches))
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
-            $Span['element']['attributes'] += $this->parseAttributes($matches[1]);
+            $Span['element']['attributes'] += $this->attributeData($matches[1]);
 
             $Span['extent'] += strlen($matches[0]);
         }
@@ -354,7 +354,7 @@ class ParsedownExtra extends Parsedown
     # ~
     #
 
-    protected function parseAttributes($attributeString)
+    protected function attributeData($attributeString)
     {
         $Data = array();
 
@@ -380,7 +380,7 @@ class ParsedownExtra extends Parsedown
         return $Data;
     }
 
-    protected $attributesPattern = '{((?:[#.][-\w]+[ ]*)+)}';
+    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
 
     # ~
 
