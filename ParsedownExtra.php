@@ -164,14 +164,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockMarkupComplete($Block)
     {
-        if ( ! isset($Block['element']['attributes']['markdown']) or $Block['element']['attributes']['markdown'] !== '1')
-        {
-            return $Block;
-        }
-
-        unset($Block['element']['attributes']['markdown']);
-
-        $Block['element']['text'] = "\n".$this->text($Block['element']['text'])."\n";
+        $Block['markup'] = $this->elementMarkup($Block['markup']);
 
         return $Block;
     }
@@ -388,4 +381,51 @@ class ParsedownExtra extends Parsedown
     }
 
     protected $attributesPattern = '{((?:[#.][-\w]+[ ]*)+)}';
+
+    # ~
+
+    protected function elementMarkup($input) # recursive
+    {
+        # http://stackoverflow.com/q/1148928/200145
+        libxml_use_internal_errors(true);
+
+        $DOMDocument = new DOMDocument;
+
+        # http://stackoverflow.com/q/11309194/200145
+        $input = mb_convert_encoding($input, 'HTML-ENTITIES', 'UTF-8');
+
+        # http://stackoverflow.com/q/4879946/200145
+        $DOMDocument->loadHTML($input, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $mdEnabled = $DOMDocument->documentElement->getAttribute('markdown') === '1';
+
+        if ($mdEnabled)
+        {
+            $DOMDocument->documentElement->removeAttribute('markdown');
+        }
+
+        $elementText = '';
+
+        foreach ($DOMDocument->documentElement->childNodes as $Node)
+        {
+            if ($Node instanceof DOMText)
+            {
+                $elementText .= $mdEnabled ? "\n".$this->text($Node->nodeValue)."\n" : $DOMDocument->saveHTML($Node);
+            }
+            elseif ($Node instanceof DOMNode)
+            {
+                $markup = $DOMDocument->saveHTML($Node);
+
+                $elementText .= $this->elementMarkup($markup);
+            }
+        }
+
+        # because we don't want for markup to get encoded
+        $DOMDocument->documentElement->nodeValue = 'placeholder';
+
+        $output = $DOMDocument->saveHTML($DOMDocument->documentElement);
+        $output = str_replace('placeholder', $elementText, $output);
+
+        return $output;
+    }
 }
