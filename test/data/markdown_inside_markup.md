@@ -1,18 +1,32 @@
 <div class="example" markdown="1">
-This is *markdown* text.
+_markdown_
 
 This is another paragraph. It contains <em>inline markup</em>.
-
 <div>
-This is block-level markup. No *markdown* here.
+_no markdown_
 </div>
 </div>
 
 ---
 
 <div markdown="1">
-*markdown*
+_markdown_
 <div markdown="1">
 _markdown_
 </div>
+</div>
+
+---
+
+<div>
+_no markdown_
+<div markdown="1">
+_markdown_
+</div>
+</div>
+
+---
+
+<div markdown="0">
+_no markdown_
 </div>
