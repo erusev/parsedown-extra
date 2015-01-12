@@ -384,7 +384,7 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    protected function elementMarkup($input) # recursive
+    protected function elementMarkup($elementMarkup) # recursive
     {
         # http://stackoverflow.com/q/1148928/200145
         libxml_use_internal_errors(true);
@@ -392,40 +392,47 @@ class ParsedownExtra extends Parsedown
         $DOMDocument = new DOMDocument;
 
         # http://stackoverflow.com/q/11309194/200145
-        $input = mb_convert_encoding($input, 'HTML-ENTITIES', 'UTF-8');
+        $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
 
         # http://stackoverflow.com/q/4879946/200145
-        $DOMDocument->loadHTML($input, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-        $mdEnabled = $DOMDocument->documentElement->getAttribute('markdown') === '1';
-
-        if ($mdEnabled)
-        {
-            $DOMDocument->documentElement->removeAttribute('markdown');
-        }
+        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $elementText = '';
 
-        foreach ($DOMDocument->documentElement->childNodes as $Node)
+        if ($DOMDocument->documentElement->getAttribute('markdown') === '1')
         {
-            if ($Node instanceof DOMText)
+            foreach ($DOMDocument->documentElement->childNodes as $Node)
             {
-                $elementText .= $mdEnabled ? "\n".$this->text($Node->nodeValue)."\n" : $DOMDocument->saveHTML($Node);
+                $elementText .= $DOMDocument->saveHTML($Node);
             }
-            elseif ($Node instanceof DOMNode)
-            {
-                $markup = $DOMDocument->saveHTML($Node);
 
-                $elementText .= $this->elementMarkup($markup);
+            $DOMDocument->documentElement->removeAttribute('markdown');
+
+            $elementText = "\n".$this->text($elementText)."\n";
+        }
+        else
+        {
+            foreach ($DOMDocument->documentElement->childNodes as $Node)
+            {
+                $nodeMarkup = $DOMDocument->saveHTML($Node);
+
+                if ($Node instanceof DOMText or $Node instanceof DOMNode and in_array($Node->nodeName, $this->textLevelElements))
+                {
+                    $elementText .= $nodeMarkup;
+                }
+                else
+                {
+                    $elementText .= $this->elementMarkup($nodeMarkup);
+                }
             }
         }
 
         # because we don't want for markup to get encoded
         $DOMDocument->documentElement->nodeValue = 'placeholder';
 
-        $output = $DOMDocument->saveHTML($DOMDocument->documentElement);
-        $output = str_replace('placeholder', $elementText, $output);
+        $markup = $DOMDocument->saveHTML($DOMDocument->documentElement);
+        $markup = str_replace('placeholder', $elementText, $markup);
 
-        return $output;
+        return $markup;
     }
 }
