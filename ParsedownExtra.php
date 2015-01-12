@@ -57,7 +57,6 @@ class ParsedownExtra extends Parsedown
     # Blocks
     #
 
-
     #
     # Abbreviation
 
@@ -307,6 +306,7 @@ class ParsedownExtra extends Parsedown
 
     #
     # ~
+    #
 
     protected function unmarkedText($text)
     {
