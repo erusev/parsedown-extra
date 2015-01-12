@@ -397,6 +397,11 @@ class ParsedownExtra extends Parsedown
         # http://stackoverflow.com/q/4879946/200145
         $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
+        if ($DOMDocument->documentElement->hasChildNodes() === false) # void element
+        {
+            return $elementMarkup;
+        }
+
         $elementText = '';
 
         if ($DOMDocument->documentElement->getAttribute('markdown') === '1')
