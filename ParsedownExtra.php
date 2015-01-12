@@ -214,7 +214,10 @@ class ParsedownExtra extends Parsedown
 
     protected function blockMarkupComplete($Block)
     {
-        $Block['markup'] = $this->elementMarkup($Block['markup']);
+        if ( ! isset($Block['void']))
+        {
+            $Block['markup'] = $this->elementMarkup($Block['markup']);
+        }
 
         return $Block;
     }
@@ -422,11 +425,6 @@ class ParsedownExtra extends Parsedown
         $DOMDocument->loadHTML($elementMarkup);
         $DOMDocument->removeChild($DOMDocument->doctype);
         $DOMDocument->replaceChild($DOMDocument->firstChild->firstChild->firstChild, $DOMDocument->firstChild);
-
-        if ($DOMDocument->documentElement->hasChildNodes() === false) # void element
-        {
-            return $elementMarkup;
-        }
 
         $elementText = '';
 
