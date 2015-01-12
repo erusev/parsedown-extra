@@ -351,27 +351,27 @@ class ParsedownExtra extends Parsedown
             return $A['number'] - $B['number'];
         });
 
-        foreach ($this->DefinitionData['Footnote'] as $name => $Data)
+        foreach ($this->DefinitionData['Footnote'] as $definitionId => $DefinitionData)
         {
-            if ( ! isset($Data['number']))
+            if ( ! isset($DefinitionData['number']))
             {
                 continue;
             }
 
-            $text = $Data['text'];
+            $text = $DefinitionData['text'];
 
-            $numbers = range(1, $Data['count']);
+            $numbers = range(1, $DefinitionData['count']);
 
             foreach ($numbers as $number)
             {
-                $text .= '&#160;<a href="#fnref'.$number.':'.$name.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $text .= '&#160;<a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
             $text = "\n".parent::text($text)."\n";
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
-                'attributes' => array('id' => 'fn:'.$name),
+                'attributes' => array('id' => 'fn:'.$definitionId),
                 'text' => $text,
             );
         }
