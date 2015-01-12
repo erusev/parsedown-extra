@@ -21,11 +21,10 @@ class ParsedownExtra extends Parsedown
     function __construct()
     {
         $this->BlockTypes[':'] []= 'DefinitionList';
-
-        $this->DefinitionTypes['*'] []= 'Abbreviation';
+        $this->BlockTypes['*'] []= 'Abbreviation';
 
         # identify footnote definitions before reference definitions
-        array_unshift($this->DefinitionTypes['['], 'Footnote');
+        array_unshift($this->BlockTypes['['], 'Footnote');
 
         # identify footnote markers before before links
         array_unshift($this->InlineTypes['['], 'FootnoteMarker');
@@ -44,7 +43,7 @@ class ParsedownExtra extends Parsedown
 
         # add footnotes
 
-        if (isset($this->Definitions['Footnote']))
+        if (isset($this->DefinitionData['Footnote']))
         {
             $Element = $this->buildFootnoteElement();
 
@@ -58,21 +57,72 @@ class ParsedownExtra extends Parsedown
     # Blocks
     #
 
+
     #
-    # Atx
+    # Abbreviation
 
-    protected function blockHeader($Line)
+    protected function blockAbbreviation($Line)
     {
-        $Block = parent::blockHeader($Line);
-
-        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/^\*\[(.+?)\]:[ ]*(.+?)[ ]*$/', $Line['text'], $matches))
         {
-            $attributeString = $matches[1][0];
+            $this->DefinitionData['Abbreviation'][$matches[1]] = $matches[2];
 
-            $Block['element']['attributes'] = $this->attributeData($attributeString);
+            $Block = array(
+                'hidden' => true,
+            );
 
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            return $Block;
         }
+    }
+
+    #
+    # Footnote
+
+    protected function blockFootnote($Line)
+    {
+        if (preg_match('/^\[\^(.+?)\]:[ ]?(.*)$/', $Line['text'], $matches))
+        {
+            $Block = array(
+                'label' => $matches[1],
+                'text' => $matches[2],
+                'hidden' => true,
+            );
+
+            return $Block;
+        }
+    }
+
+    protected function blockFootnoteContinue($Line, $Block)
+    {
+        if (isset($Block['interrupted']))
+        {
+            if ($Line['indent'] >= 4)
+            {
+                $Block['text'] .= "\n\n" . $Line['text'];
+
+                return $Block;
+            }
+        }
+        else
+        {
+            if ($Line['text'][0] === '[' and preg_match('/^\[\^(.+?)\]:/', $Line['text']))
+            {
+                return;
+            }
+
+            $Block['text'] .= "\n" . $Line['text'];
+
+            return $Block;
+        }
+    }
+
+    protected function blockFootnoteComplete($Block)
+    {
+        $this->DefinitionData['Footnote'][$Block['label']] = array(
+            'text' => $Block['text'],
+            'count' => null,
+            'number' => null,
+        );
 
         return $Block;
     }
@@ -141,13 +191,13 @@ class ParsedownExtra extends Parsedown
     }
 
     #
-    # Setext
+    # Header
 
-    protected function blockSetextHeader($Line, array $Block = null)
+    protected function blockHeader($Line)
     {
-        $Block = parent::blockSetextHeader($Line, $Block);
+        $Block = parent::blockHeader($Line);
 
-        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
 
@@ -170,43 +220,22 @@ class ParsedownExtra extends Parsedown
     }
 
     #
-    # Definitions
-    #
+    # Setext
 
-    #
-    # Abbreviation
-
-    protected function definitionAbbreviation($Line)
+    protected function blockSetextHeader($Line, array $Block = null)
     {
-        if (preg_match('/^\*\[(.+?)\]:[ ]*(.+?)[ ]*$/', $Line['text'], $matches))
+        $Block = parent::blockSetextHeader($Line, $Block);
+
+        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
-            $Abbreviation = array(
-                'id' => $matches[1],
-                'data' => $matches[2],
-            );
+            $attributeString = $matches[1][0];
 
-            return $Abbreviation;
+            $Block['element']['attributes'] = $this->attributeData($attributeString);
+
+            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
-    }
 
-    #
-    # Footnote
-
-    protected function definitionFootnote($Line)
-    {
-        if (preg_match('/^\[\^(.+?)\]:[ ]?(.+)$/', $Line['text'], $matches))
-        {
-            $Footnote = array(
-                'id' => $matches[1],
-                'data' => array(
-                    'text' => $matches[2],
-                    'count' => null,
-                    'number' => null,
-                ),
-            );
-
-            return $Footnote;
-        }
+        return $Block;
     }
 
     #
@@ -222,26 +251,26 @@ class ParsedownExtra extends Parsedown
         {
             $name = $matches[1];
 
-            if ( ! isset($this->Definitions['Footnote'][$name]))
+            if ( ! isset($this->DefinitionData['Footnote'][$name]))
             {
                 return;
             }
 
-            $this->Definitions['Footnote'][$name]['count'] ++;
+            $this->DefinitionData['Footnote'][$name]['count'] ++;
 
-            if ( ! isset($this->Definitions['Footnote'][$name]['number']))
+            if ( ! isset($this->DefinitionData['Footnote'][$name]['number']))
             {
-                $this->Definitions['Footnote'][$name]['number'] = ++ $this->footnoteCount; # » &
+                $this->DefinitionData['Footnote'][$name]['number'] = ++ $this->footnoteCount; # » &
             }
 
             $Element = array(
                 'name' => 'sup',
-                'attributes' => array('id' => 'fnref'.$this->Definitions['Footnote'][$name]['count'].':'.$name),
+                'attributes' => array('id' => 'fnref'.$this->DefinitionData['Footnote'][$name]['count'].':'.$name),
                 'handler' => 'element',
                 'text' => array(
                     'name' => 'a',
                     'attributes' => array('href' => '#fn:'.$name, 'class' => 'footnote-ref'),
-                    'text' => $this->Definitions['Footnote'][$name]['number'],
+                    'text' => $this->DefinitionData['Footnote'][$name]['number'],
                 ),
             );
 
@@ -280,9 +309,9 @@ class ParsedownExtra extends Parsedown
     {
         $text = parent::unmarkedText($text);
 
-        if (isset($this->Definitions['Abbreviation']))
+        if (isset($this->DefinitionData['Abbreviation']))
         {
-            foreach ($this->Definitions['Abbreviation'] as $abbreviation => $phrase)
+            foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $phrase)
             {
                 $text = str_replace($abbreviation, '<abbr title="'.$phrase.'">'.$abbreviation.'</abbr>', $text);
             }
@@ -313,11 +342,11 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
-        uasort($this->Definitions['Footnote'], function($A, $B) {
+        uasort($this->DefinitionData['Footnote'], function($A, $B) {
             return $A['number'] - $B['number'];
         });
 
-        foreach ($this->Definitions['Footnote'] as $name => $Data)
+        foreach ($this->DefinitionData['Footnote'] as $name => $Data)
         {
             if ( ! isset($Data['number']))
             {
@@ -325,7 +354,6 @@ class ParsedownExtra extends Parsedown
             }
 
             $text = $Data['text'];
-            $text = $this->line($text);
 
             $numbers = range(1, $Data['count']);
 
@@ -334,16 +362,12 @@ class ParsedownExtra extends Parsedown
                 $text .= '&#160;<a href="#fnref'.$number.':'.$name.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
+            $text = "\n".parent::text($text)."\n";
+
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
                 'attributes' => array('id' => 'fn:'.$name),
-                'handler' => 'elements',
-                'text' => array(
-                    array(
-                        'name' => 'p',
-                        'text' => $text,
-                    ),
-                ),
+                'text' => $text,
             );
         }
 
