@@ -314,9 +314,11 @@ class ParsedownExtra extends Parsedown
 
         if (isset($this->DefinitionData['Abbreviation']))
         {
-            foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $phrase)
+            foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $meaning)
             {
-                $text = str_replace($abbreviation, '<abbr title="'.$phrase.'">'.$abbreviation.'</abbr>', $text);
+                $pattern = '/\b'.preg_quote($abbreviation).'\b/';
+
+                $text = preg_replace($pattern, '<abbr title="'.$meaning.'">'.$abbreviation.'</abbr>', $text);
             }
         }
 
