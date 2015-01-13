@@ -93,6 +93,11 @@ class ParsedownExtra extends Parsedown
 
     protected function blockFootnoteContinue($Line, $Block)
     {
+        if ($Line['text'][0] === '[' and preg_match('/^\[\^(.+?)\]:/', $Line['text']))
+        {
+            return;
+        }
+
         if (isset($Block['interrupted']))
         {
             if ($Line['indent'] >= 4)
@@ -104,11 +109,6 @@ class ParsedownExtra extends Parsedown
         }
         else
         {
-            if ($Line['text'][0] === '[' and preg_match('/^\[\^(.+?)\]:/', $Line['text']))
-            {
-                return;
-            }
-
             $Block['text'] .= "\n" . $Line['text'];
 
             return $Block;
@@ -360,19 +360,32 @@ class ParsedownExtra extends Parsedown
 
             $text = $DefinitionData['text'];
 
+            $text = parent::text($text);
+
             $numbers = range(1, $DefinitionData['count']);
+
+            $backLinkText = '';
 
             foreach ($numbers as $number)
             {
-                $text .= '&#160;<a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $backLinkText = '<a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
-            $text = "\n".parent::text($text)."\n";
+            if (substr($text, - 4) === '</p>')
+            {
+                $backLinkText = '&#160;'.$backLinkText;
+
+                $text = substr_replace($text, $backLinkText.'</p>', - 4);
+            }
+            else
+            {
+                $text .= "\n".'<p>'.$backLinkText.'</p>';
+            }
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
                 'attributes' => array('id' => 'fn:'.$definitionId),
-                'text' => $text,
+                'text' => "\n".$text."\n",
             );
         }
 
