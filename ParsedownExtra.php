@@ -247,9 +247,9 @@ class ParsedownExtra extends Parsedown
     #
     # Footnote Marker
 
-    protected function inlineFootnoteMarker($excerpt)
+    protected function inlineFootnoteMarker($Excerpt)
     {
-        if (preg_match('/^\[\^(.+?)\]/', $excerpt, $matches))
+        if (preg_match('/^\[\^(.+?)\]/', $Excerpt['text'], $matches))
         {
             $name = $matches[1];
 
@@ -288,20 +288,20 @@ class ParsedownExtra extends Parsedown
     #
     # Link
 
-    protected function inlineLink($excerpt)
+    protected function inlineLink($Excerpt)
     {
-        $Span = parent::inlineLink($excerpt);
+        $Link = parent::inlineLink($Excerpt);
 
-        $remainder = substr($excerpt, $Span['extent']);
+        $remainder = substr($Excerpt['text'], $Link['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
-            $Span['element']['attributes'] += $this->attributeData($matches[1]);
+            $Link['element']['attributes'] += $this->attributeData($matches[1]);
 
-            $Span['extent'] += strlen($matches[0]);
+            $Link['extent'] += strlen($matches[0]);
         }
 
-        return $Span;
+        return $Link;
     }
 
     #
