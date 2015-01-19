@@ -20,6 +20,11 @@ class ParsedownExtra extends Parsedown
 
     function __construct()
     {
+        if (parent::version < '1.5.0')
+        {
+            throw new Exception('ParsedownExtra requires a later version of Parsedown');
+        }
+
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
