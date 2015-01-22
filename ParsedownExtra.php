@@ -468,13 +468,13 @@ class ParsedownExtra extends Parsedown
             {
                 $nodeMarkup = $DOMDocument->saveHTML($Node);
 
-                if ($Node instanceof DOMText or $Node instanceof DOMNode and in_array($Node->nodeName, $this->textLevelElements))
+                if ($Node instanceof DOMElement and ! in_array($Node->nodeName, $this->textLevelElements))
                 {
-                    $elementText .= $nodeMarkup;
+                    $elementText .= $this->elementMarkup($nodeMarkup);
                 }
                 else
                 {
-                    $elementText .= $this->elementMarkup($nodeMarkup);
+                    $elementText .= $nodeMarkup;
                 }
             }
         }
