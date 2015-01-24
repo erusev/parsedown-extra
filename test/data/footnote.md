@@ -7,3 +7,5 @@ first [^a] second [^b].
 
 [^a]: one
 [^b]: two
+
+second time [^1]

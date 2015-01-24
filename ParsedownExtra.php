@@ -372,22 +372,24 @@ class ParsedownExtra extends Parsedown
 
             $numbers = range(1, $DefinitionData['count']);
 
-            $backLinkText = '';
+            $backLinksMarkup = '';
 
             foreach ($numbers as $number)
             {
-                $backLinkText = '<a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $backLinksMarkup .= ' <a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
+
+            $backLinksMarkup = substr($backLinksMarkup, 1);
 
             if (substr($text, - 4) === '</p>')
             {
-                $backLinkText = '&#160;'.$backLinkText;
+                $backLinksMarkup = '&#160;'.$backLinksMarkup;
 
-                $text = substr_replace($text, $backLinkText.'</p>', - 4);
+                $text = substr_replace($text, $backLinksMarkup.'</p>', - 4);
             }
             else
             {
-                $text .= "\n".'<p>'.$backLinkText.'</p>';
+                $text .= "\n".'<p>'.$backLinksMarkup.'</p>';
             }
 
             $Element['text'][1]['text'] []= array(
