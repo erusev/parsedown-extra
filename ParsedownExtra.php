@@ -334,7 +334,7 @@ class ParsedownExtra extends Parsedown
     }
 
     #
-    # ~
+    # Util Methods
     #
 
     protected function buildFootnoteElement()
@@ -355,9 +355,7 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
-        uasort($this->DefinitionData['Footnote'], function($A, $B) {
-            return $A['number'] - $B['number'];
-        });
+        uasort($this->DefinitionData['Footnote'], 'self::sortFootnotes');
 
         foreach ($this->DefinitionData['Footnote'] as $definitionId => $DefinitionData)
         {
@@ -402,9 +400,7 @@ class ParsedownExtra extends Parsedown
         return $Element;
     }
 
-    #
     # ~
-    #
 
     protected function attributeData($attributeString)
     {
@@ -488,5 +484,12 @@ class ParsedownExtra extends Parsedown
         $markup = str_replace('placeholder', $elementText, $markup);
 
         return $markup;
+    }
+
+    # ~
+
+    protected function sortFootnotes($A, $B)
+    {
+        return $A['number'] - $B['number'];
     }
 }
