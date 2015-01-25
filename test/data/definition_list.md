@@ -12,7 +12,9 @@ line
 
     paragraphs
 
-: nested
+:   nested
+
+        code block
 
     > quote
     > block
