@@ -161,27 +161,9 @@ class ParsedownExtra extends Parsedown
             );
         }
 
-        $text = substr($Line['text'], 1);
-        $text = ltrim($text);
-
-        unset($Block['dd']);
-
-        $Block['dd'] = array(
-            'name' => 'dd',
-            'handler' => 'line',
-            'text' => $text,
-        );
-
-        if (isset($Block['interrupted']))
-        {
-            $Block['dd']['handler'] = 'text';
-
-            unset($Block['interrupted']);
-        }
-
-        $Element['text'] []= & $Block['dd'];
-
         $Block['element'] = $Element;
+
+        $Block = $this->addDdElement($Line, $Block);
 
         return $Block;
     }
@@ -190,25 +172,7 @@ class ParsedownExtra extends Parsedown
     {
         if ($Line['text'][0] === ':')
         {
-            $text = substr($Line['text'], 1);
-            $text = trim($text);
-
-            unset($Block['dd']);
-
-            $Block['dd'] = array(
-                'name' => 'dd',
-                'handler' => 'line',
-                'text' => $text,
-            );
-
-            if (isset($Block['interrupted']))
-            {
-                $Block['dd']['handler'] = 'text';
-
-                unset($Block['interrupted']);
-            }
-
-            $Block['element']['text'] []= & $Block['dd'];
+            $Block = $this->addDdElement($Line, $Block);
 
             return $Block;
         }
@@ -374,6 +338,31 @@ class ParsedownExtra extends Parsedown
     #
     # Util Methods
     #
+
+    protected function addDdElement(array $Line, array $Block)
+    {
+        $text = substr($Line['text'], 1);
+        $text = trim($text);
+
+        unset($Block['dd']);
+
+        $Block['dd'] = array(
+            'name' => 'dd',
+            'handler' => 'line',
+            'text' => $text,
+        );
+
+        if (isset($Block['interrupted']))
+        {
+            $Block['dd']['handler'] = 'text';
+
+            unset($Block['interrupted']);
+        }
+
+        $Block['element']['text'] []= & $Block['dd'];
+
+        return $Block;
+    }
 
     protected function buildFootnoteElement()
     {
