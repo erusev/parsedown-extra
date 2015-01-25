@@ -1,6 +1,18 @@
-Apple
-:   Pomaceous fruit of plants of the genus Malus in
-    the family Rosaceae.
+Term 1
+:   one
+:   two
+    extra line
 
-Orange
-:   The fruit of an evergreen tree of the genus Citrus.
+Term 2
+
+:   lazy
+line
+
+:   multiple
+
+    paragraphs
+
+: nested
+
+    > quote
+    > block

@@ -139,7 +139,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionList($Line, $Block)
     {
-        if (isset($Block['type']))
+        if ( ! isset($Block) or isset($Block['type']))
         {
             return;
         }
@@ -161,11 +161,25 @@ class ParsedownExtra extends Parsedown
             );
         }
 
-        $Element['text'] []= array(
+        $text = substr($Line['text'], 1);
+        $text = ltrim($text);
+
+        unset($Block['dd']);
+
+        $Block['dd'] = array(
             'name' => 'dd',
             'handler' => 'line',
-            'text' => ltrim($Line['text'], ' :'),
+            'text' => $text,
         );
+
+        if (isset($Block['interrupted']))
+        {
+            $Block['dd']['handler'] = 'text';
+
+            unset($Block['interrupted']);
+        }
+
+        $Element['text'] []= & $Block['dd'];
 
         $Block['element'] = $Element;
 
@@ -176,22 +190,46 @@ class ParsedownExtra extends Parsedown
     {
         if ($Line['text'][0] === ':')
         {
-            $Block['element']['text'] []= array(
+            $text = substr($Line['text'], 1);
+            $text = trim($text);
+
+            unset($Block['dd']);
+
+            $Block['dd'] = array(
                 'name' => 'dd',
                 'handler' => 'line',
-                'text' => ltrim($Line['text'], ' :'),
+                'text' => $text,
             );
+
+            if (isset($Block['interrupted']))
+            {
+                $Block['dd']['handler'] = 'text';
+
+                unset($Block['interrupted']);
+            }
+
+            $Block['element']['text'] []= & $Block['dd'];
 
             return $Block;
         }
-
-        if ( ! isset($Block['interrupted']))
+        else
         {
-            $Element = array_pop($Block['element']['text']);
+            if (isset($Block['interrupted']) and $Line['indent'] === 0)
+            {
+                return;
+            }
 
-            $Element['text'] .= "\n" . chop($Line['text']);
+            if (isset($Block['interrupted']))
+            {
+                $Block['dd']['handler'] = 'text';
+                $Block['dd']['text'] .= "\n\n";
 
-            $Block['element']['text'] []= $Element;
+                unset($Block['interrupted']);
+            }
+
+            $text = substr($Line['body'], min($Line['indent'], 4));
+
+            $Block['dd']['text'] .= "\n" . $text;
 
             return $Block;
         }
