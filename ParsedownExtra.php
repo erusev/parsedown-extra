@@ -246,7 +246,7 @@ class ParsedownExtra extends Parsedown
         {
             $attributeString = $matches[1][0];
 
-            $Block['element']['attributes'] = $this->attributeData($attributeString);
+            $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
@@ -261,7 +261,7 @@ class ParsedownExtra extends Parsedown
     {
         if ( ! isset($Block['void']))
         {
-            $Block['markup'] = $this->elementMarkup($Block['markup']);
+            $Block['markup'] = $this->processTag($Block['markup']);
         }
 
         return $Block;
@@ -278,7 +278,7 @@ class ParsedownExtra extends Parsedown
         {
             $attributeString = $matches[1][0];
 
-            $Block['element']['attributes'] = $this->attributeData($attributeString);
+            $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
@@ -342,7 +342,7 @@ class ParsedownExtra extends Parsedown
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
-            $Link['element']['attributes'] += $this->attributeData($matches[1]);
+            $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
 
             $Link['extent'] += strlen($matches[0]);
         }
@@ -440,7 +440,7 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    protected function attributeData($attributeString)
+    protected function parseAttributeData($attributeString)
     {
         $Data = array();
 
@@ -466,11 +466,9 @@ class ParsedownExtra extends Parsedown
         return $Data;
     }
 
-    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
-
     # ~
 
-    protected function elementMarkup($elementMarkup) # recursive
+    protected function processTag($elementMarkup) # recursive
     {
         # http://stackoverflow.com/q/1148928/200145
         libxml_use_internal_errors(true);
@@ -506,7 +504,7 @@ class ParsedownExtra extends Parsedown
 
                 if ($Node instanceof DOMElement and ! in_array($Node->nodeName, $this->textLevelElements))
                 {
-                    $elementText .= $this->elementMarkup($nodeMarkup);
+                    $elementText .= $this->processTag($nodeMarkup);
                 }
                 else
                 {
@@ -526,8 +524,14 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    protected function sortFootnotes($A, $B)
+    protected function sortFootnotes($A, $B) # callback
     {
         return $A['number'] - $B['number'];
     }
+
+    #
+    # Fields
+    #
+
+    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
 }
