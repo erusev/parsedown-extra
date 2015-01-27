@@ -13,7 +13,7 @@ Include both `Parsedown.php` and `ParsedownExtra.php` or install [the composer p
 ``` php
 $Extra = new ParsedownExtra();
 
-echo $Extra->text('Hello _Extra_!'); # prints: <p>Hello <em>Extra</em>!</p>
+echo $Extra->text('# Header {#sth}'); # prints: <h1 id="sth">Header</h1>
 ```
 
 ### Questions
