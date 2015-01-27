@@ -13,7 +13,7 @@ Include both `Parsedown.php` and `ParsedownExtra.php` or install [the composer p
 ``` php
 $Extra = new ParsedownExtra();
 
-echo $Extra->text('# Header {#sth}'); # prints: <h1 id="sth">Header</h1>
+echo $Extra->text('# Header {.sth}'); # prints: <h1 class="sth">Header</h1>
 ```
 
 ### Questions
@@ -24,4 +24,4 @@ echo $Extra->text('# Header {#sth}'); # prints: <h1 id="sth">Header</h1>
 
 **How can I help?**
 
-Use it, star it, share it and if you feel generous, [donate some money](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=528P3NZQMP8N2).
+Use it, star it, share it and in case you feel generous, [donate some money](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=528P3NZQMP8N2).
