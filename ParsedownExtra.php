@@ -326,7 +326,11 @@ class ParsedownExtra extends Parsedown
         {
             foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $meaning)
             {
-                $pattern = '/\b'.preg_quote($abbreviation, '/').'\b/';
+                if (substr($abbreviation, -1) === '.') {
+                    $pattern = '/\b'.preg_quote(rtrim($abbreviation, "."), '/').'\b\.(?!\S)/';
+                } else {
+                    $pattern = '/\b'.preg_quote($abbreviation, '/').'\b/';
+                }
 
                 $text = preg_replace($pattern, '<abbr title="'.$meaning.'">'.$abbreviation.'</abbr>', $text);
             }
