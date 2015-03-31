@@ -62,6 +62,18 @@ class ParsedownExtra extends Parsedown
     }
 
     #
+    # Setters
+    #
+
+    function setFootnotePrefix( $footnotePrefix )
+    {
+        $this->footnotePrefix = $footnotePrefix;
+        return $this;
+    }
+
+    protected $footnotePrefix = '';
+
+    #
     # Blocks
     #
 
@@ -275,13 +287,15 @@ class ParsedownExtra extends Parsedown
                 $this->DefinitionData['Footnote'][$name]['number'] = ++ $this->footnoteCount; # » &
             }
 
+            $fnPrefix = !empty( $this->footnotePrefix ) ? $this->footnotePrefix . ':' : '';
+
             $Element = array(
                 'name' => 'sup',
-                'attributes' => array('id' => 'fnref'.$this->DefinitionData['Footnote'][$name]['count'].':'.$name),
+                'attributes' => array('id' => 'fnref'.$fnPrefix.$this->DefinitionData['Footnote'][$name]['count'].':'.$name),
                 'handler' => 'element',
                 'text' => array(
                     'name' => 'a',
-                    'attributes' => array('href' => '#fn:'.$name, 'class' => 'footnote-ref'),
+                    'attributes' => array('href' => '#fn:'.$fnPrefix.$name, 'class' => 'footnote-ref'),
                     'text' => $this->DefinitionData['Footnote'][$name]['number'],
                 ),
             );
@@ -399,9 +413,11 @@ class ParsedownExtra extends Parsedown
 
             $backLinksMarkup = '';
 
+            $fnPrefix = !empty( $this->footnotePrefix ) ? $this->footnotePrefix . ':' : '';
+
             foreach ($numbers as $number)
             {
-                $backLinksMarkup .= ' <a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
+                $backLinksMarkup .= ' <a href="#fnref'.$fnPrefix.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
             $backLinksMarkup = substr($backLinksMarkup, 1);
@@ -419,7 +435,7 @@ class ParsedownExtra extends Parsedown
 
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
-                'attributes' => array('id' => 'fn:'.$definitionId),
+                'attributes' => array('id' => 'fn:'.$fnPrefix.$definitionId),
                 'text' => "\n".$text."\n",
             );
         }
