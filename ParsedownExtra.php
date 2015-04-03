@@ -71,6 +71,11 @@ class ParsedownExtra extends Parsedown
         return $this;
     }
 
+    function clearFootnotePrefix()
+    {
+        return $this->setFootnotePrefix( '' );
+    }
+
     protected $footnotePrefix = '';
 
     #
