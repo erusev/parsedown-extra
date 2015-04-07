@@ -225,7 +225,7 @@ class ParsedownExtra extends Parsedown
     {
         if ( ! isset($Block['void']))
         {
-            $Block['markup'] = $this->processTag($Block['markup']);
+            $Block['markup'] = $this->processTags($Block['markup']);
         }
 
         return $Block;
@@ -456,8 +456,23 @@ class ParsedownExtra extends Parsedown
     }
 
     # ~
+    
+    protected function processText($document, $element){
+        $nodeMarkup = $document->saveXML($element);
 
-    protected function processTag($elementMarkup) # recursive
+        $text = '';
+
+        if ($element instanceof DOMElement and ! in_array($element->nodeName, $this->textLevelElements)){
+            $text = $this->processTags($nodeMarkup);
+        }else{
+            $text = $nodeMarkup;
+        }
+        return $text;
+    }
+
+    # ~
+
+    protected function processTags($elementMarkup) # recursive
     {
         # http://stackoverflow.com/q/1148928/200145
         libxml_use_internal_errors(true);
@@ -467,45 +482,66 @@ class ParsedownExtra extends Parsedown
         # http://stackoverflow.com/q/11309194/200145
         $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
 
-        # http://stackoverflow.com/q/4879946/200145
-        $DOMDocument->loadHTML($elementMarkup);
-        $DOMDocument->removeChild($DOMDocument->doctype);
-        $DOMDocument->replaceChild($DOMDocument->firstChild->firstChild->firstChild, $DOMDocument->firstChild);
+        # NOTE: Below chunk can be replaced if using php v 5.4 - http://stackoverflow.com/q/4879946/200145
+        #   - $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $TMPDocument = new DOMDocument;
+        $TMPDocument->loadHTML($elementMarkup);
+        $domElements = $TMPDocument->getElementsByTagName('body')->item(0);
+
+        if( !empty($domElements) and $domElements->hasChildNodes() ){
+            foreach ($domElements->childNodes as $child){
+                $DOMDocument->appendChild($DOMDocument->importNode($child, true));
+            }
+        }
+        # END_NOTE
+        
+        $markup = '';
+
+        if( $DOMDocument->hasChildNodes() ){
+            foreach ($DOMDocument->childNodes as $childElement) {
+                 $markup .= $this->processTag( $DOMDocument, $childElement);
+            }
+        }
+
+        return $markup;
+    }
+
+    # ~
+
+    protected function processTag($document, $element) # recursive
+    {
 
         $elementText = '';
 
-        if ($DOMDocument->documentElement->getAttribute('markdown') === '1')
+        if ($element instanceof DOMElement and $element->getAttribute('markdown') === '1')
         {
-            foreach ($DOMDocument->documentElement->childNodes as $Node)
-            {
-                $elementText .= $DOMDocument->saveHTML($Node);
+            if( $element->hasChildNodes() ){
+                foreach ($element->childNodes as $Node){
+                    $elementText .= $document->saveXML($Node);
+                }
+            }else{
+                $elementText = $document->saveXML($element);
             }
 
-            $DOMDocument->documentElement->removeAttribute('markdown');
-
+            $element->removeAttribute('markdown');
             $elementText = "\n".$this->text($elementText)."\n";
         }
         else
         {
-            foreach ($DOMDocument->documentElement->childNodes as $Node)
-            {
-                $nodeMarkup = $DOMDocument->saveHTML($Node);
-
-                if ($Node instanceof DOMElement and ! in_array($Node->nodeName, $this->textLevelElements))
-                {
-                    $elementText .= $this->processTag($nodeMarkup);
+            if( $element->hasChildNodes() ){
+                foreach ($element->childNodes as $Node){
+                    $elementText .= $this->processText($document, $Node);
                 }
-                else
-                {
-                    $elementText .= $nodeMarkup;
-                }
+            }else{
+                $elementText =  $this->processText($document, $element);
             }
+
         }
 
         # because we don't want for markup to get encoded
-        $DOMDocument->documentElement->nodeValue = 'placeholder';
+        $element->nodeValue = 'placeholder';
 
-        $markup = $DOMDocument->saveHTML($DOMDocument->documentElement);
+        $markup = $document->saveXML($element);
         $markup = str_replace('placeholder', $elementText, $markup);
 
         return $markup;
