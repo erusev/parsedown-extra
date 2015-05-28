@@ -503,10 +503,11 @@ class ParsedownExtra extends Parsedown
         }
 
         # because we don't want for markup to get encoded
-        $DOMDocument->documentElement->nodeValue = 'placeholder';
+        $placeholder = '__pde_placeholder_pde__';
+        $DOMDocument->documentElement->nodeValue = $placeholder;
 
         $markup = $DOMDocument->saveHTML($DOMDocument->documentElement);
-        $markup = str_replace('placeholder', $elementText, $markup);
+        $markup = str_replace($placeholder, $elementText, $markup);
 
         return $markup;
     }
