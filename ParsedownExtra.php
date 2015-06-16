@@ -463,7 +463,11 @@ class ParsedownExtra extends Parsedown
         $text = '';
 
         if ($element instanceof DOMElement and !in_array($element->nodeName, $this->textLevelElements) and !in_array($element->nodeName, $this->voidElements)){
-            $text = $this->processTags($nodeMarkup);
+            if( $element->hasChildNodes() ){
+                $text = $this->processTags($nodeMarkup);
+            }else{
+                $text = $nodeMarkup;
+            }
         }else{
             $text = $nodeMarkup;
         }
