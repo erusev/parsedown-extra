@@ -458,7 +458,7 @@ class ParsedownExtra extends Parsedown
     # ~
     
     protected function processText($document, $element){
-        $nodeMarkup = $document->saveXML($element);
+        $nodeMarkup = $document->saveHTML($element);
 
         $text = '';
 
@@ -482,18 +482,8 @@ class ParsedownExtra extends Parsedown
         # http://stackoverflow.com/q/11309194/200145
         $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
 
-        # NOTE: Below chunk can be replaced if using php v 5.4 - http://stackoverflow.com/q/4879946/200145
-        #   - $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        $TMPDocument = new DOMDocument;
-        $TMPDocument->loadHTML($elementMarkup);
-        $domElements = $TMPDocument->getElementsByTagName('body')->item(0);
-
-        if( !empty($domElements) and $domElements->hasChildNodes() ){
-            foreach ($domElements->childNodes as $child){
-                $DOMDocument->appendChild($DOMDocument->importNode($child, true));
-            }
-        }
-        # END_NOTE
+        # http://stackoverflow.com/q/4879946/200145
+        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         
         $markup = '';
 
@@ -517,10 +507,10 @@ class ParsedownExtra extends Parsedown
         {
             if( $element->hasChildNodes() ){
                 foreach ($element->childNodes as $Node){
-                    $elementText .= $document->saveXML($Node);
+                    $elementText .= $document->saveHTML($Node);
                 }
             }else{
-                $elementText = $document->saveXML($element);
+                $elementText = $document->saveHTML($element);
             }
 
             $element->removeAttribute('markdown');
@@ -541,7 +531,7 @@ class ParsedownExtra extends Parsedown
         # because we don't want for markup to get encoded
         $element->nodeValue = 'placeholder';
 
-        $markup = $document->saveXML($element);
+        $markup = $document->saveHTML($element);
         $markup = str_replace('placeholder', $elementText, $markup);
 
         return $markup;

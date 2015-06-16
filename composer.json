@@ -13,6 +13,7 @@
         }
     ],
     "require": {
+        "php": ">=5.4",
         "erusev/parsedown": "~1.4"
     },
     "autoload": {
