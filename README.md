@@ -1,3 +1,5 @@
+> I'm also working on a [Markdown editor for the desktop](http://caret.io?ref=parsedown) - I'll appreciate it if you have a look at it and tell me what you think.
+
 ## Parsedown Extra
 
 [![Build Status](https://img.shields.io/travis/erusev/parsedown-extra/master.svg?style=flat-square)](https://travis-ci.org/erusev/parsedown-extra)
