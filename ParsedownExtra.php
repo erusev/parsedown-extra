@@ -28,6 +28,7 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
+        $this->BlockTypes['='][] = 'Figure';
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
@@ -441,7 +442,7 @@ class ParsedownExtra extends Parsedown
             $row = $Line['text'];
 
             $row = preg_replace('/^ *\\| *| *\\| *$/', '', $row);
-            $cells = preg_split('/ *\\| */', $row);
+            $cells = preg_split('/\\|/', $row);
 
             preg_match_all('/(?:(\\\\[|])|[^|`]|`[^`]+`|`)+/', $row, $matches);
             $colspan=1;
@@ -468,7 +469,7 @@ class ParsedownExtra extends Parsedown
                 $Element = array(
                     'name' => 'td',
                     'handler' => 'line',
-                    'text' => $cell,
+                    'text' => trim($cell),
                 );
 
                 if (isset($Block['alignments'][$index]))
@@ -576,7 +577,6 @@ class ParsedownExtra extends Parsedown
         if (isset($Block['complete'])) return;
 
         if (isset($Block['interrupted'])) {
-            //$Block['text'][] = "\n";
             unset($Block['interrupted']);
         }
 
@@ -591,7 +591,7 @@ class ParsedownExtra extends Parsedown
             $Block['complete'] = true;
             return $Block;
         }
-        $Block['element']['text'] .= $Line['body'];
+        $Block['element']['text'] .= "\n".$Line['body'];
 
         return $Block;
     }
@@ -599,14 +599,16 @@ class ParsedownExtra extends Parsedown
     protected function blockFigureComplete($Block)
     {
         if(isset($Block['element']['caption'])) {
+            $line = $this->line($Block['element']['caption']);
             $Block['element']['handler']='multiple';
             $Block['element']['text'] = array(
                 $Block['element']['text'],
                 array(
                     'name'=>'figcaption',
-                    'text'=>$this->line($Block['element']['caption']),
+                    'text'=>$line,
                 ),
             );
+            $Block['element']['attributes']['title']=strip_tags($line);
             unset($Block['element']['caption']);
         }
         return $Block;
