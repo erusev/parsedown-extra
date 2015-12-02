@@ -28,6 +28,7 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
+        $this->BlockTypes['-'][] = 'Section';
         $this->BlockTypes['='][] = 'Figure';
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
@@ -542,6 +543,50 @@ class ParsedownExtra extends Parsedown
 
             return $Block;
         }
+    }
+
+    protected function blockSection($Line, $Block)
+    {
+        if (preg_match('/^'.$Line['text'][0].'{3,} *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+            $Block = array(
+                'char' => $Line['text'][0],
+                'element' => array(
+                    'name' => 'section',
+                    'handler'=>'text',
+                    'text' => '',
+                ),
+            );
+
+            if(isset($m[1])) {
+                $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
+            }
+            unset($m);
+
+            return $Block;
+        }
+    }
+
+    protected function blockSectionContinue($Line, $Block)
+    {
+        if (isset($Block['complete'])) return;
+
+        if (isset($Block['interrupted'])) {
+            unset($Block['interrupted']);
+        }
+
+        if (preg_match('/^'.$Block['char'].'{3,} *$/', $Line['text'])) {
+            $Block['complete'] = true;
+            return $Block;
+        }
+        $Block['element']['text'] .= "\n".$Line['body'];
+
+        return $Block;
+    }
+
+    protected function blockSectionComplete($Block)
+    {
+        $Block['complete'] = true;
+        return $Block;
     }
 
     /**
