@@ -28,6 +28,10 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
+
+        $this->BlockTypes['$'][] = 'Variable';
+        $this->InlineTypes['$'][] = 'GetVariable';
+        $this->inlineMarkerList .= '$';
         $this->BlockTypes['-'][] = 'Section';
         $this->BlockTypes['='][] = 'Figure';
         $this->BlockTypes[':'] []= 'DefinitionList';
@@ -497,6 +501,57 @@ class ParsedownExtra extends Parsedown
 
             return $Block;
         }
+    }
+
+    protected $variables=array();
+    protected function inlineGetVariable($Excerpt)
+    {
+        if (preg_match('/^\$([a-z_]+)/', $Excerpt['text'], $m) && isset($this->variables[$m[1]])) {
+            return array(
+                'extent' => strlen($m[0]),
+                'markup' => $this->variables[$m[1]],
+            );
+        }
+    }
+
+    protected function blockVariable($Line)
+    {
+        if (preg_match('/^\$([a-z_]+)=\{(.*)/', $Line['text'], $m))
+        {
+            $Block = array(
+                'id' => $m[1],
+                'markup' => $m[2],
+            );
+            return $Block;
+        }
+    }
+
+
+    protected function blockVariableContinue($Line, $Block)
+    {
+        if (isset($Block['complete'])) return;
+        else if (isset($Block['closed'])) return;
+
+        if (isset($Block['interrupted'])) {
+            unset($Block['interrupted']);
+        }
+
+        if (substr($Line['text'], 0, 1)=='}') {
+            $Block['complete'] = true;
+            return $Block;
+        }
+        $Block['markup'] .= "\n".$Line['body'];
+
+        return $Block;
+    }
+
+    protected function blockVariableComplete($Block)
+    {
+        if(isset($Block['id'])) {
+            $this->variables[$Block['id']] = $this->text($Block['markup']);
+            $Block['markup']='';
+        }
+        return $Block;
     }
 
     protected function blockQuote($Line)
