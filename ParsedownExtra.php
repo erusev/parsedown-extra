@@ -255,7 +255,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockFencedCode($Line)
     {
-        if (preg_match('/^(['.$Line['text'][0].']{3,}[ ]*([\w-]+)?)([ ]*('.$this->regexAttribute.'+))[ ]*$/', $Line['text'], $matches))
+        if (preg_match('/^(['.$Line['text'][0].']{3,}[ ]*([\w-]+)?)([ ]*\{('.$this->regexAttribute.'+)\})[ ]*$/', $Line['text'], $matches))
         {
             $attributeString = $matches[4];
             $new_line = $matches[1];
