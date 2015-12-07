@@ -251,6 +251,31 @@ class ParsedownExtra extends Parsedown
     }
 
     #
+    # Fenced Code
+
+    protected function blockFencedCode($Line)
+    {
+        if (preg_match('/^(['.$Line['text'][0].']{3,}[ ]*([\w-]+)?)([ ]*('.$this->regexAttribute.'+))[ ]*$/', $Line['text'], $matches))
+        {
+            var_dump( $matches );
+            $attributeString = $matches[4];
+            $new_line = $matches[1];
+
+            $Line["text"] = $new_line;
+            $Block = parent::blockFencedCode($Line);
+
+            if ( $Block )
+            {
+                $newattrs = $this->parseAttributeData($attributeString);
+                foreach ( $newattrs as $k => $v )
+                    $Block['element']['attributes'][$k] = $v;
+            }
+
+            return $Block;
+        }
+    }
+
+    #
     # Inline Elements
     #
 
