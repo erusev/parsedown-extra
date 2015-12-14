@@ -18,7 +18,7 @@ class ParsedownExtra extends Parsedown
     # ~
 
     const version = '0.7.0';
-
+    
     # ~
 
     function __construct()
@@ -432,6 +432,147 @@ class ParsedownExtra extends Parsedown
 
         return $Element;
     }
+    
+    /** 
+     * Table
+     * @param type $Line
+     * @param array $Block
+     * @return string
+     */
+    protected function blockTable($Line, array $Block = null)
+    {
+        if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted'])) {
+            return;
+        }
+        
+        if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '') {
+            //Get all header lines
+            $hlines = explode("\n",$Block['element']['text']);
+            
+            
+            //Get cell alignments
+            $alignments = array();
+
+            $divider = $Line['text'];
+            $divider = trim($divider);
+            $divider = trim($divider, '|');
+
+            $dividerCells = explode('|', $divider);
+
+            foreach ($dividerCells as $dividerCell)
+            {
+                $dividerCell = trim($dividerCell);
+
+                if ($dividerCell === '') {
+                    continue;
+                }
+
+                $alignment = null;
+
+                if ($dividerCell[0] === ':') {
+                    $alignment = 'left';
+                }
+
+                if (substr($dividerCell, - 1) === ':') {
+                    $alignment = $alignment === 'left' ? 'center' : 'right';
+                }
+
+                $alignments []= $alignment;
+            }
+            
+            //Start Block type
+            $Block = array(
+                'alignments' => $alignments,
+                'identified' => true,
+                'element' => array(
+                    'name' => 'table',
+                    'handler' => 'elements',
+                ),
+            );
+            
+            $Block['element']['text'] []= array(
+                'name' => 'caption',
+                'handler' => 'elements',
+                'text' => array()
+            );
+            
+            $Block['element']['text'] []= array(
+                'name' => 'thead',
+                'handler' => 'elements',
+                'text' => array(),
+            );
+
+            $Block['element']['text'] []= array(
+                'name' => 'tbody',
+                'handler' => 'elements',
+                'text' => array(),
+            );
+            
+            //Treating header lines
+            foreach($hlines as $hline) {              
+                $HeaderElements = array();
+
+                //$header = $Block['element']['text'];           
+                $header = $hline;
+                $header = trim($header);
+                $header = ltrim($header, '|');
+
+                $headerCells = explode('|', $header);
+                $colspan = 1;
+
+                foreach ($headerCells as $index => $headerCell)
+                {
+                    if($headerCell=='') {
+                        $colspan++;
+                        if($index>0) {
+                            $prev = $index -1;
+                            while($prev > -1) {
+                                if(isset($HeaderElements[$prev])) {
+                                    if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {                                  
+                                      $HeaderElements[$prev]['attributes']['colspan']=$colspan;
+                                    } else {                                  
+                                      $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
+                                    }
+                                    break;
+                                }
+                                $prev--;
+                            }
+                        }
+                        continue;
+                    }
+
+                    $headerCell = trim($headerCell);
+
+                    $HeaderElement = array(
+                        'name' => 'th',
+                        'text' => $headerCell,
+                        'handler' => 'line',
+                    );
+
+                    if (isset($alignments[$index]))
+                    {
+                        $HeaderElement['attributes'] = array(
+                            'style' => 'text-align: '.$alignments[$index].';',
+                        );
+                    }
+
+                    if($colspan > 1) {
+                        $Element['attributes']['colspan'] = $colspan;
+                        $colspan = 1;
+                    }
+
+                    $HeaderElements[$index]= $HeaderElement;
+                }
+
+                $Block['element']['text'][1]['text'] []= array(
+                    'name' => 'tr',
+                    'handler' => 'elements',
+                    'text' => $HeaderElements,
+                );
+            }
+            return $Block;
+        }
+    }
 
     protected function blockTableContinue($Line, array $Block)
     {
@@ -497,9 +638,17 @@ class ParsedownExtra extends Parsedown
                 'text' => $Elements,
             );
 
-            $Block['element']['text'][1]['text'] []= $Element;
+            $Block['element']['text'][2]['text'] []= $Element;
 
             return $Block;
+        } elseif (preg_match('/^\[(.*.)\]$/', $Line['text'],$parts)) { //Get Table Caption          
+            $Block['element']['text'][0]['text'] []= array(
+                'name' => 'caption',
+                'handler' => 'line',
+                'text' => $parts[1],
+            );
+    
+          return $Block;
         }
     }
 
