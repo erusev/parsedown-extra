@@ -220,8 +220,19 @@ class ParsedownExtra extends Parsedown
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
+        if(!isset($Block['element']['attributes']['id'])) {
+            $Block['element']['attributes']['id'] = self::slug($Block['element']['text']);
+        }
 
         return $Block;
+    }
+
+    protected static function slug($s)
+    {
+        $s = preg_replace('/[^a-z0-9\-]+/i', '-', $s);
+        $s = preg_replace('/-+/', '-', $s);
+        $s = preg_replace('/^-|-$/', '', $s);
+        return $s;
     }
 
     #
