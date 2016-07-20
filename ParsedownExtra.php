@@ -716,6 +716,7 @@ class ParsedownExtra extends Parsedown
             );
 
             if(isset($m[1])) {
+                $Block['element']['name'] = 'div';
                 $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
             }
 
