@@ -716,7 +716,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockQuote($Line)
     {
-        if (preg_match('/^> ?(\{'.$this->regexAttribute.'+\})? ?(.*)/', $Line['text'], $m))
+        if (preg_match('/^> ?(\{'.$this->regexAttribute.'+\})? ?(.*)?/', $Line['text'], $m))
         {
             $Block = array(
                 'element' => array(
@@ -726,7 +726,7 @@ class ParsedownExtra extends Parsedown
                 ),
             );
 
-            if(isset($m[1])) {
+            if(isset($m[1]) && $m[1]) {
                 $Block['element']['name'] = 'div';
                 $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
             }
