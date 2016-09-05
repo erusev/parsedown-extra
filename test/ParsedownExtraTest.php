@@ -5,16 +5,7 @@ class ParsedownExtraTest extends ParsedownTest
     protected function initDirs()
     {
         $dirs = parent::initDirs();
-
-        $dirs []= dirname(__FILE__).'/data/';
-
+        $dirs[] = __DIR__ . '/data/';
         return $dirs;
-    }
-
-    protected function initParsedown()
-    {
-        $Parsedown = new ParsedownExtra();
-
-        return $Parsedown;
     }
 }
