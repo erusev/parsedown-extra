@@ -8,3 +8,7 @@ php:
 
 install:
   - composer install
+
+script:
+  - phpunit
+  - phpunit vendor/erusev/parsedown/test/CommonMarkTestWeak.php || true
