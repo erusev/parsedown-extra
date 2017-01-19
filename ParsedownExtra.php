@@ -474,7 +474,7 @@ class ParsedownExtra extends Parsedown
 
         $elementText = '';
 
-        if ($DOMDocument->documentElement->getAttribute('markdown') === '1')
+        if (!defined('HHVM_VERSION') && $DOMDocument->documentElement->getAttribute('markdown') === '1')
         {
             foreach ($DOMDocument->documentElement->childNodes as $Node)
             {
