@@ -302,6 +302,26 @@ class ParsedownExtra extends Parsedown
     {
         $Link = parent::inlineLink($Excerpt);
 
+        if (
+            ! isset($Link)
+            and preg_match('/(.*)\(\s*(.*?)\s*(\))/', $Excerpt['text'], $matches, PREG_OFFSET_CAPTURE)
+        ) {
+            $trimmedExcerpt['text'] = $matches[1][0] . '(' . $matches[2][0] . ')';
+
+            $trimmedExcerpt['context'] = $trimmedExcerpt['text'];
+
+            $trimmedLink = parent::inlineLink($trimmedExcerpt);
+
+            if (isset($trimmedLink))
+            {
+                $endPosition = $matches[3][1] + 1;
+
+                $trimmedLink['extent'] = $endPosition;
+
+                $Link = $trimmedLink;
+            }
+        }
+
         $remainder = substr($Excerpt['text'], $Link['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
