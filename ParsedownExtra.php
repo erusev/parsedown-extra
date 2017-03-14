@@ -539,11 +539,11 @@ class ParsedownExtra extends Parsedown
      *
      * Explained:
      *
-     *  * Attribute must start with a letter of the alphabet, optionally preceded by `#` or `.`
+     *  * Attribute may start with any alpha-numeric character, optionally preceded by `#` or `.`
      *  * Attribute may optionally contain `=`, `-`, or any other "word" character (`[a-zA-Z0-9_]`)
      *  * Attribute may optionally be followed by a space and then another attribute
      *
      */
-    protected $regexAttribute = '(?:[#.]?[a-zA-Z][\w=-]* ?)';
+    protected $regexAttribute = '(?:[#.]?[A-Za-z0-9][\w=-]* ?)';
 }
 
