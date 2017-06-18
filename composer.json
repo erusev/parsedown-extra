@@ -13,8 +13,10 @@
         }
     ],
     "require": {
-        "php": ">=5.4",
-        "erusev/parsedown": "~1.4"
+        "php": ">=5.3.6",
+        "ext-dom": "*",
+        "ext-mbstring": "*",
+        "erusev/parsedown": "^1.6"
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
