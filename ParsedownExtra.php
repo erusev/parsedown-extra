@@ -1032,6 +1032,8 @@ class ParsedownExtra extends Parsedown
             }
         }
 
+        libxml_clear_errors();
+
         return $markup;
     }
 
