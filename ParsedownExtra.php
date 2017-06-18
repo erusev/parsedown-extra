@@ -442,7 +442,9 @@ class ParsedownExtra extends Parsedown
             $Definition = $this->DefinitionData['Reference'][$definition];
 
             // Copy all attributes defined in the reference, except "url".
-            $Definition['href'] = $Definition['url'];
+            // "href" should remains before the title for strict compatibility
+            // with CommonMarkTest, so it is prepended.
+            $Definition = array('href' => $Definition['url']) + $Definition;
             unset($Definition['url']);
             $Element['attributes'] = $Definition + $Element['attributes'];
         }
