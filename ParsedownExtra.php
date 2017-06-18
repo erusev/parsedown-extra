@@ -18,7 +18,7 @@ class ParsedownExtra extends Parsedown
     # ~
 
     const version = '0.7.0';
-    
+
     # ~
 
     function __construct()
@@ -487,8 +487,8 @@ class ParsedownExtra extends Parsedown
 
         return $Element;
     }
-    
-    /** 
+
+    /**
      * Table
      * @param type $Line
      * @param array $Block
@@ -499,12 +499,12 @@ class ParsedownExtra extends Parsedown
         if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted'])) {
             return;
         }
-        
+
         if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '') {
             //Get all header lines
             $hlines = explode("\n",$Block['element']['text']);
-            
-            
+
+
             //Get cell alignments
             $alignments = array();
 
@@ -534,7 +534,7 @@ class ParsedownExtra extends Parsedown
 
                 $alignments []= $alignment;
             }
-            
+
             //Start Block type
             $Block = array(
                 'alignments' => $alignments,
@@ -544,13 +544,13 @@ class ParsedownExtra extends Parsedown
                     'handler' => 'elements',
                 ),
             );
-            
+
             $Block['element']['text'] []= array(
                 'name' => 'caption',
                 'handler' => 'elements',
                 'text' => array()
             );
-            
+
             $Block['element']['text'] []= array(
                 'name' => 'thead',
                 'handler' => 'elements',
@@ -562,12 +562,12 @@ class ParsedownExtra extends Parsedown
                 'handler' => 'elements',
                 'text' => array(),
             );
-            
+
             //Treating header lines
-            foreach($hlines as $hline) {              
+            foreach($hlines as $hline) {
                 $HeaderElements = array();
 
-                //$header = $Block['element']['text'];           
+                //$header = $Block['element']['text'];
                 $header = $hline;
                 $header = trim($header);
                 $header = ltrim($header, '|');
@@ -583,9 +583,9 @@ class ParsedownExtra extends Parsedown
                             $prev = $index -1;
                             while($prev > -1) {
                                 if(isset($HeaderElements[$prev])) {
-                                    if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {                                  
+                                    if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {
                                       $HeaderElements[$prev]['attributes']['colspan']=$colspan;
-                                    } else {                                  
+                                    } else {
                                       $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
                                     }
                                     break;
@@ -696,13 +696,13 @@ class ParsedownExtra extends Parsedown
             $Block['element']['text'][2]['text'] []= $Element;
 
             return $Block;
-        } elseif (preg_match('/^\[(.*.)\]$/', $Line['text'],$parts)) { //Get Table Caption          
+        } elseif (preg_match('/^\[(.*.)\]$/', $Line['text'],$parts)) { //Get Table Caption
             $Block['element']['text'][0]['text'] []= array(
                 'name' => 'caption',
                 'handler' => 'line',
                 'text' => $parts[1],
             );
-    
+
           return $Block;
         }
     }
