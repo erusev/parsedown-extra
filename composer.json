@@ -18,5 +18,11 @@
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
+    },
+    "autoload-dev": {
+        "psr-0": {
+            "TestParsedown": "test/",
+            "ParsedownExtraTest": "test/"
+        }
     }
 }
