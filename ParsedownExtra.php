@@ -293,7 +293,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockMarkupComplete($Block)
     {
-        if ( ! isset($Block['void']))
+        if (empty($Block['void']))
         {
             $Block['markup'] = $this->processTags($Block['markup']);
         }
@@ -1232,24 +1232,47 @@ class ParsedownExtra extends Parsedown
 
     protected function processTags($elementMarkup) # recursive
     {
-        # http://stackoverflow.com/q/1148928/200145
-        libxml_use_internal_errors(true);
+        $markup = '';
 
-        $DOMDocument = new DOMDocument;
-
-        # http://stackoverflow.com/q/11309194/200145
         if (extension_loaded('mbstring')) {
+            # http://stackoverflow.com/q/11309194/200145
             $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
         }
 
-        # http://stackoverflow.com/q/4879946/200145
-        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        # http://stackoverflow.com/q/1148928/200145
+        libxml_use_internal_errors(true);
 
-        $markup = '';
+        // Check if the xml is self-contained (e.g. not <div>first</div><div>second</div>).
+        $xml = @simplexml_load_string($elementMarkup);
+        $isSelfContained = is_object($xml);
 
-        if( $DOMDocument->hasChildNodes() ){
+        $DOMDocument = new DOMDocument('1.0', 'UTF-8');
+
+        if ($isSelfContained) {
+            # http://stackoverflow.com/q/4879946/200145
+            $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+
+            if ($DOMDocument->hasChildNodes()){
+                foreach ($DOMDocument->childNodes as $childElement) {
+                    $markup .= $this->processTag( $DOMDocument, $childElement);
+                }
+            }
+        }
+        // Process incomplete, partial or not-single child nodes.
+        else {
+            // Set an outer div, but process only its children.
+            $DOMDocument->loadHTML('<X>' . $elementMarkup . '</X>', LIBXML_NOBLANKS | LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
             foreach ($DOMDocument->childNodes as $childElement) {
-                 $markup .= $this->processTag( $DOMDocument, $childElement);
+                if ($childElement->hasChildNodes()) {
+                    foreach ($childElement->childNodes as $Node) {
+                        $markup .= $DOMDocument->saveHTML($Node);
+                    }
+                } else {
+                    $markup = $DOMDocument->saveHTML($childElement);
+                }
+
+                $childElement->removeAttribute('markdown');
+                $markup = "\n" . $this->text($markup) . "\n";
             }
         }
 
@@ -1262,7 +1285,6 @@ class ParsedownExtra extends Parsedown
 
     protected function processTag($document, $element) # recursive
     {
-
         $elementText = '';
 
         if ($element instanceof DOMElement && $element->getAttribute('markdown') === '1')
