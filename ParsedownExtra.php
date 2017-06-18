@@ -28,12 +28,6 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
-
-        $this->BlockTypes['$'][] = 'Variable';
-        $this->InlineTypes['$'][] = 'GetVariable';
-        $this->inlineMarkerList .= '$';
-        $this->BlockTypes['-'][] = 'Section';
-        $this->BlockTypes['='][] = 'Figure';
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
@@ -42,6 +36,8 @@ class ParsedownExtra extends Parsedown
 
         # identify footnote markers before links
         array_unshift($this->InlineTypes['['], 'FootnoteMarker');
+
+        $this->prepareExtendedSupport();
     }
 
     #
@@ -67,6 +63,51 @@ class ParsedownExtra extends Parsedown
 
         return $markup;
     }
+
+    /**
+     * Allow to support extended markdown extra (figure, section, table, variable).
+     *
+     * @param bool $extendedSupport
+     * @return ParsedownExtra
+     */
+    public function setExtendedSupport($extendedSupport)
+    {
+        if ($extendedSupport !== $this->extendedSupport) {
+            $this->extendedSupport = (bool) $extendedSupport;
+            $this->prepareExtendedSupport();
+        }
+        return $this;
+    }
+
+    public function getExtendedSupport()
+    {
+        return $this->extendedSupport;
+    }
+
+    protected function prepareExtendedSupport()
+    {
+        if ($this->getExtendedSupport()) {
+            $this->BlockTypes['$'][] = 'Variable';
+            $this->InlineTypes['$'][] = 'GetVariable';
+            $this->inlineMarkerList .= '$';
+            $this->BlockTypes['-'][] = 'Section';
+            $this->BlockTypes['='][] = 'Figure';
+        } else {
+            unset($this->BlockTypes['$']);
+            unset($this->InlineTypes['$']);
+            $this->inlineMarkerList = str_replace('$', '', $this->inlineMarkerList);
+            $key = array_search('Section', $this->BlockTypes['-']);
+            if ($key !== false) {
+                unset($this->BlockTypes['-'][$key]);
+            }
+            $key = array_search('Figure', $this->BlockTypes['=']);
+            if ($key !== false) {
+                unset($this->BlockTypes['='][$key]);
+            }
+        }
+    }
+
+    protected $extendedSupport = true;
 
     #
     # Setters
