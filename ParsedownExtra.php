@@ -1013,7 +1013,7 @@ class ParsedownExtra extends Parsedown
      */
     protected function blockFigure($Line, $Block)
     {
-        if (preg_match('/^'.$Line['text'][0].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+        if (preg_match('/^'.$Line['text'][0].'{3,} *(\[.*\])? *(\{' . $this->regexAttribute . '+\})? *$/', $Line['text'], $matches)) {
             $Block = array(
                 'char' => $Line['text'][0],
                 'element' => array(
@@ -1023,14 +1023,14 @@ class ParsedownExtra extends Parsedown
                 ),
             );
 
-            if (isset($m[1])) {
-                $Block['element']['caption']=substr($m[1],1,strlen($m[1])-2);
+            if (isset($matches[1])) {
+                $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
+                $Block['caption_position'] = 'before';
             }
 
-            if(isset($m[2])) {
-                $Block['element']['attributes']=$this->parseAttributeData(substr($m[2],1,strlen($m[2])-2));
+            if(isset($matches[2])) {
+                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
             }
-            unset($m);
 
             return $Block;
         }
@@ -1038,24 +1038,30 @@ class ParsedownExtra extends Parsedown
 
     protected function blockFigureContinue($Line, $Block)
     {
-        if (isset($Block['complete'])) return;
+        if (isset($Block['complete'])) {
+            return;
+        }
 
         if (isset($Block['interrupted'])) {
             unset($Block['interrupted']);
         }
 
-        if (preg_match('/^'.$Block['char'].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
-            if (isset($m[1])) {
-                $Block['element']['caption']=substr($m[1],1,strlen($m[1])-2);
+        if (preg_match('/^'.$Block['char'].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $matches)) {
+            if (isset($matches[1])) {
+                $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
+                $Block['caption_position'] = 'after';
             }
-            if(isset($m[2])) {
-                $Block['element']['attributes']=$this->parseAttributeData(substr($m[2],1,strlen($m[2])-2));
+            if(isset($matches[2])) {
+                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
             }
-            unset($m);
             $Block['complete'] = true;
             return $Block;
         }
-        $Block['element']['text'] .= "\n".$Line['body'];
+        // Allow to manage cleanly a figure with a multiline markdown text.
+        if ($Block['element']['text'] !== '') {
+            $Block['element']['text'] .= "\n";
+        }
+        $Block['element']['text'] .= $Line['body'];
 
         return $Block;
     }
@@ -1065,35 +1071,51 @@ class ParsedownExtra extends Parsedown
         if(isset($Block['element']['caption'])) {
             $line = $this->line($Block['element']['caption']);
             $Block['element']['handler']='multiple';
-            $Block['element']['text'] = array(
-                $Block['element']['text'],
-                array(
-                    'name'=>'figcaption',
-                    'text'=>$line,
-                ),
-            );
-            $Block['element']['attributes']['title']=strip_tags($line);
+            if ($Block['caption_position'] == 'before') {
+                $Block['element']['text'] = array(
+                    array(
+                        'name'=>'figcaption',
+                        'text'=>$line,
+                    ),
+                    $Block['element']['text'],
+                );
+            } else {
+                $Block['element']['text'] = array(
+                    $Block['element']['text'],
+                    array(
+                        'name'=>'figcaption',
+                        'text'=>$line,
+                    ),
+                );
+            }
+            $Block['element']['attributes']['title'] = strip_tags($line);
             unset($Block['element']['caption']);
+            unset($Block['caption_position']);
         }
         return $Block;
     }
 
-    protected function multiple($a)
+    protected function multiple($Blocks)
     {
-        if(isset($a['element'])) return $this->multiple(array($a));
-        $s = '';
-        foreach($a as $i=>$Block) {
-            if(is_string($Block)) {
-                if(strpos($Block, "\n")!==false) $s.= $this->text($Block);
-                else $s.= $this->line($Block);
-            } else if(isset($Block['handler'])) {
-                $h = $Block['handler'];
-                $s .= $this->$h($Block);
-            } else if(isset($Block['name'])) {
-                $s .= $this->element($Block);
+        if (isset($Blocks['element'])) {
+            $Blocks = array($Blocks);
+        }
+        $output = '';
+        foreach ($Blocks as $Block) {
+            if (is_string($Block)) {
+                if (strpos($Block, "\n") !== false) {
+                    $output .= $this->text($Block);
+                } else {
+                    $output .= $this->line($Block);
+                }
+            } elseif (isset($Block['handler'])) {
+                $handler = $Block['handler'];
+                $output .= $this->$handler($Block);
+            } elseif (isset($Block['name'])) {
+                $output .= $this->element($Block);
             }
         }
-        return $s;
+        return $output;
     }
 
     # ~
