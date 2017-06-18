@@ -894,23 +894,25 @@ class ParsedownExtra extends Parsedown
         return $Block;
     }
 
+    #
+    # Quote
+
     protected function blockQuote($Line)
     {
-        if (preg_match('/^> ?(\{'.$this->regexAttribute.'+\})? ?(.*)?/', $Line['text'], $m))
+        if (preg_match('/^>[ ]?(\{'.$this->regexAttribute.'+\})? ?(.*)?/', $Line['text'], $matches))
         {
             $Block = array(
                 'element' => array(
                     'name' => 'blockquote',
                     'handler' => 'lines',
-                    'text' => (array) $m[2],
+                    'text' => (array) $matches[3],
                 ),
             );
 
-            if(isset($m[1]) && $m[1]) {
+            if (isset($matches[2]) && $matches[2]) {
                 $Block['element']['name'] = 'div';
-                $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
+                $Block['element']['attributes']=$this->parseAttributeData($matches[2]);
             }
-
 
             return $Block;
         }
@@ -918,7 +920,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockQuoteContinue($Line, array $Block)
     {
-        if ($Line['body'][0] === '>' and preg_match('/^>[ ]?(.*)/', $Line['body'], $matches))
+        if ($Line['text'][0] === '>' and preg_match('/^>[ ]?(.*)/', $Line['text'], $matches))
         {
             if (isset($matches[1][0]) && ($matches[1][0]=='{' || $matches[1][0]=='(')) {
                 return;
@@ -937,7 +939,7 @@ class ParsedownExtra extends Parsedown
 
         if ( ! isset($Block['interrupted']))
         {
-            $Block['element']['text'] []= $Line['body'];
+            $Block['element']['text'] []= $Line['text'];
 
             return $Block;
         }
