@@ -892,6 +892,7 @@ class ParsedownExtra extends Parsedown
         else if (isset($Block['closed'])) return;
 
         if (isset($Block['interrupted'])) {
+            $Block['element']['text'] .= "\n";
             unset($Block['interrupted']);
         }
 
@@ -910,6 +911,7 @@ class ParsedownExtra extends Parsedown
             $this->variables[$Block['id']] = $this->text($Block['markup']);
             $Block['markup']='';
         }
+        $Block['complete'] = true;
         return $Block;
     }
 
@@ -989,6 +991,7 @@ class ParsedownExtra extends Parsedown
         if (isset($Block['complete'])) return;
 
         if (isset($Block['interrupted'])) {
+            $Block['element']['text'] .= "\n";
             unset($Block['interrupted']);
         }
 
@@ -996,10 +999,7 @@ class ParsedownExtra extends Parsedown
             $Block['complete'] = true;
             return $Block;
         }
-        if ($Block['element']['text'] !== '') {
-            $Block['element']['text'] .= "\n";
-        }
-        $Block['element']['text'] .= $Line['body'];
+        $Block['element']['text'] .= "\n" . $Line['body'];
 
         return $Block;
     }
