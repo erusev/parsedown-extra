@@ -40,7 +40,7 @@ class ParsedownExtra extends Parsedown
         # identify footnote definitions before reference definitions
         array_unshift($this->BlockTypes['['], 'Footnote');
 
-        # identify footnote markers before before links
+        # identify footnote markers before links
         array_unshift($this->InlineTypes['['], 'FootnoteMarker');
     }
 
