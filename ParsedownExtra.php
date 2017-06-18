@@ -632,19 +632,17 @@ class ParsedownExtra extends Parsedown
      */
     protected function blockTable($Line, array $Block = null)
     {
-        if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted'])) {
+        if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted']))
+        {
             return;
         }
 
-        if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '') {
-            //Get all header lines
-            $hlines = explode("\n",$Block['element']['text']);
-
-
-            //Get cell alignments
+        if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '')
+        {
             $alignments = array();
 
             $divider = $Line['text'];
+
             $divider = trim($divider);
             $divider = trim($divider, '|');
 
@@ -654,22 +652,32 @@ class ParsedownExtra extends Parsedown
             {
                 $dividerCell = trim($dividerCell);
 
-                if ($dividerCell === '') {
+                if ($dividerCell === '')
+                {
                     continue;
                 }
 
                 $alignment = null;
 
-                if ($dividerCell[0] === ':') {
+                if ($dividerCell[0] === ':')
+                {
                     $alignment = 'left';
                 }
 
-                if (substr($dividerCell, - 1) === ':') {
+                if (substr($dividerCell, - 1) === ':')
+                {
                     $alignment = $alignment === 'left' ? 'center' : 'right';
                 }
 
                 $alignments []= $alignment;
             }
+
+            # ~
+
+            //Get all header lines
+            $hlines = explode("\n",$Block['element']['text']);
+
+            # ~
 
             //Start Block type
             $Block = array(
@@ -699,7 +707,7 @@ class ParsedownExtra extends Parsedown
                 'text' => array(),
             );
 
-            //Treating header lines
+            // Treating multiple header lines.
             foreach($hlines as $hline) {
                 $HeaderElements = array();
 
@@ -709,20 +717,21 @@ class ParsedownExtra extends Parsedown
                 $header = ltrim($header, '|');
 
                 $headerCells = explode('|', $header);
+                $lastHeaderCell = count($headerCells) - 1;
                 $colspan = 1;
 
                 foreach ($headerCells as $index => $headerCell)
                 {
                     if($headerCell=='') {
                         $colspan++;
-                        if($index>0) {
+                        if ($index>0 && $index !== $lastHeaderCell) {
                             $prev = $index -1;
                             while($prev > -1) {
                                 if(isset($HeaderElements[$prev])) {
                                     if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {
-                                      $HeaderElements[$prev]['attributes']['colspan']=$colspan;
+                                        $HeaderElements[$prev]['attributes']['colspan']=$colspan;
                                     } else {
-                                      $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
+                                        $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
                                     }
                                     break;
                                 }
