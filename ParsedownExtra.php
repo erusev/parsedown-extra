@@ -230,6 +230,11 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockHeader($Line);
 
+        // May return null, so abort if it does.
+        if (!$Block) {
+            return;
+        }
+
         if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
