@@ -728,10 +728,10 @@ class ParsedownExtra extends Parsedown
                             $prev = $index -1;
                             while($prev > -1) {
                                 if(isset($HeaderElements[$prev])) {
-                                    if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {
-                                        $HeaderElements[$prev]['attributes']['colspan']=$colspan;
-                                    } else {
+                                    if (isset($HeaderElements[$prev]['attributes']['colspan'])) {
                                         $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
+                                    } else {
+                                        $HeaderElements[$prev]['attributes']['colspan'] = $colspan;
                                     }
                                     break;
                                 }
@@ -791,22 +791,26 @@ class ParsedownExtra extends Parsedown
 
             $row = $Line['text'];
 
-            $row = preg_replace('/^ *\\| *| *\\| *$/', '', $row);
-            $cells = preg_split('/\\|/', $row);
+            $row = trim($row);
+            $row = trim($row, '|');
 
             preg_match_all('/(?:(\\\\[|])|[^|`]|`[^`]+`|`)+/', $row, $matches);
+            $lastHeaderCell = count($matches) - 1;
             $colspan=1;
 
-            foreach ($cells as $index => $cell)
+            foreach ($matches[0] as $index => $cell)
             {
                 if($cell=='') {
                     $colspan++;
-                    if($index>0) {
+                    if ($index>0 && $index !== $lastHeaderCell) {
                         $prev = $index -1;
                         while($prev > -1) {
                             if(isset($Elements[$prev])) {
-                                if(!isset($Elements[$prev]['attributes']['colspan'])) $Elements[$prev]['attributes']['colspan']=$colspan;
-                                else $Elements[$prev]['attributes']['colspan'] += $colspan;
+                                if(isset($Elements[$prev]['attributes']['colspan'])) {
+                                    $Elements[$prev]['attributes']['colspan'] += $colspan;
+                                } else {
+                                    $Elements[$prev]['attributes']['colspan'] = $colspan;
+                                }
                                 break;
                             }
                             $prev--;
