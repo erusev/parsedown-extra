@@ -296,25 +296,6 @@ class ParsedownExtra extends Parsedown
     private $footnoteCount = 0;
 
     #
-    # Link
-
-    protected function inlineLink($Excerpt)
-    {
-        $Link = parent::inlineLink($Excerpt);
-
-        $remainder = substr($Excerpt['text'], $Link['extent']);
-
-        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
-        {
-            $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
-
-            $Link['extent'] += strlen($matches[0]);
-        }
-
-        return $Link;
-    }
-
-    #
     # image
 
     protected function inlineImage($excerpt)
@@ -331,6 +312,25 @@ class ParsedownExtra extends Parsedown
         }
 
         return $Span;
+    }
+
+    #
+    # Link
+
+    protected function inlineLink($Excerpt)
+    {
+        $Link = parent::inlineLink($Excerpt);
+
+        $remainder = substr($Excerpt['text'], $Link['extent']);
+
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
+        {
+            $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
+
+            $Link['extent'] += strlen($matches[0]);
+        }
+
+        return $Link;
     }
 
     #
