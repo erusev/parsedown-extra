@@ -378,10 +378,92 @@ class ParsedownExtra extends Parsedown
 
     #
     # Link
+    #
+    # This copy of the parent::inlineLink() is required to manage attributes
+    # defined via reference. It is called only by self::inlineLink().
+    # Only the end of the method is modified to copy all defined attributes, and
+    # not only `href` and `title`.
+    # TODO To avoid this quasi-copy, the parent inlineLink should be modified to
+    # manage attributes differently or in a separate and overridable method.
+
+    protected function _inlineLink($Excerpt)
+    {
+        $Element = array(
+            'name' => 'a',
+            'handler' => 'line',
+            'text' => null,
+            'attributes' => array(
+                'href' => null,
+                'title' => null,
+            ),
+        );
+
+        $extent = 0;
+
+        $remainder = $Excerpt['text'];
+
+        if (preg_match('/\[((?:[^][]++|(?R))*+)\]/', $remainder, $matches))
+        {
+            $Element['text'] = $matches[1];
+
+            $extent += strlen($matches[0]);
+
+            $remainder = substr($remainder, $extent);
+        }
+        else
+        {
+            return;
+        }
+
+        if (preg_match('/^[(]\s*+((?:[^ ()]++|[(][^ )]+[)])++)(?:[ ]+("[^"]*"|\'[^\']*\'))?\s*[)]/', $remainder, $matches))
+        {
+            $Element['attributes']['href'] = $matches[1];
+
+            if (isset($matches[2]))
+            {
+                $Element['attributes']['title'] = substr($matches[2], 1, - 1);
+            }
+
+            $extent += strlen($matches[0]);
+        }
+        else
+        {
+            if (preg_match('/^\s*\[(.*?)\]/', $remainder, $matches))
+            {
+                $definition = strlen($matches[1]) ? $matches[1] : $Element['text'];
+                $definition = strtolower($definition);
+
+                $extent += strlen($matches[0]);
+            }
+            else
+            {
+                $definition = strtolower($Element['text']);
+            }
+
+            if ( ! isset($this->DefinitionData['Reference'][$definition]))
+            {
+                return;
+            }
+
+            $Definition = $this->DefinitionData['Reference'][$definition];
+
+            // Copy all attributes defined in the reference, except "url".
+            $Definition['href'] = $Definition['url'];
+            unset($Definition['url']);
+            $Element['attributes'] = $Definition + $Element['attributes'];
+        }
+
+        $Element['attributes']['href'] = str_replace(array('&', '<'), array('&amp;', '&lt;'), $Element['attributes']['href']);
+
+        return array(
+            'extent' => $extent,
+            'element' => $Element,
+        );
+    }
 
     protected function inlineLink($Excerpt)
     {
-        $Link = parent::inlineLink($Excerpt);
+        $Link = $this->_inlineLink($Excerpt);
 
         // may return null, so abort if it does
         if (!$Link) return $Link;
@@ -511,6 +593,41 @@ class ParsedownExtra extends Parsedown
         }
 
         return $Element;
+    }
+
+    #
+    # Reference
+
+    protected function blockReference($Line)
+    {
+        $regex = '/^\[(.+?)\]:[ ]*<?(\S+?)>?(?:[ ]+["\'(](.*)["\')])?[ ]*(?:{(?:' . $this->regexAttribute . '+)})?[ ]*$/';
+        if (preg_match($regex, $Line['text'], $matches))
+        {
+            $id = strtolower($matches[1]);
+
+            $Data = array(
+                'url' => $matches[2],
+                'title' => null,
+            );
+
+            if (isset($matches[3]))
+            {
+                $Data['title'] = $matches[3];
+            }
+
+            if (isset($matches[4]))
+            {
+                $Data += $this->parseAttributeData($matches[4]);
+            }
+
+            $this->DefinitionData['Reference'][$id] = $Data;
+
+            $Block = array(
+                'hidden' => true,
+            );
+
+            return $Block;
+        }
     }
 
     /**
