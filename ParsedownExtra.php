@@ -761,6 +761,10 @@ class ParsedownExtra extends Parsedown
                     'text' => $HeaderElements,
                 );
             }
+            // Remove caption if empty.
+            if ($Block['element']['text'][0]['text'] === array()) {
+                unset($Block['element']['text'][0]);
+            }
             return $Block;
         }
     }
