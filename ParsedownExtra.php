@@ -298,20 +298,20 @@ class ParsedownExtra extends Parsedown
     #
     # image
 
-    protected function inlineImage($excerpt)
+    protected function inlineImage($Excerpt)
     {
-        $Span = parent::inlineImage($excerpt);
+        $Inline = parent::inlineImage($Excerpt);
 
-        $remainder = substr($excerpt, $Span['extent']);
+        $remainder = substr($Excerpt['text'], $Inline['extent']);
 
-        if (preg_match('/^[ ]*'.$this->attributesPattern.'/', $remainder, $matches))
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
-            $Span['element']['attributes'] += $this->parseAttributes($matches[1]);
+            $Inline['element']['attributes'] += $this->parseAttributeData($matches[1]);
 
-            $Span['extent'] += strlen($matches[0]);
+            $Inline['extent'] += strlen($matches[0]);
         }
 
-        return $Span;
+        return $Inline;
     }
 
     #
