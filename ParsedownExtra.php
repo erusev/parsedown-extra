@@ -1091,9 +1091,9 @@ class ParsedownExtra extends Parsedown
         }
 
         # because we don't want for markup to get encoded
-        $DOMDocument->documentElement->nodeValue = 'placeholder\x1A';
+        $element->nodeValue = 'placeholder\x1A';
 
-        $markup = $DOMDocument->saveHTML($DOMDocument->documentElement);
+        $markup = $document->saveHTML($element);
         $markup = str_replace('placeholder\x1A', $elementText, $markup);
 
         return $markup;
