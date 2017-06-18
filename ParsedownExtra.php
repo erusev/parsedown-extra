@@ -18,7 +18,7 @@ class ParsedownExtra extends Parsedown
     # ~
 
     const version = '0.7.0';
-
+    
     # ~
 
     function __construct()
@@ -28,6 +28,12 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
+
+        $this->BlockTypes['$'][] = 'Variable';
+        $this->InlineTypes['$'][] = 'GetVariable';
+        $this->inlineMarkerList .= '$';
+        $this->BlockTypes['-'][] = 'Section';
+        $this->BlockTypes['='][] = 'Figure';
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
@@ -214,8 +220,19 @@ class ParsedownExtra extends Parsedown
 
             $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
+        if(!isset($Block['element']['attributes']['id'])) {
+            $Block['element']['attributes']['id'] = self::slug($Block['element']['text']);
+        }
 
         return $Block;
+    }
+
+    protected static function slug($s)
+    {
+        $s = preg_replace('/[^a-z0-9\-]+/i', '-', $s);
+        $s = preg_replace('/-+/', '-', $s);
+        $s = preg_replace('/^-|-$/', '', $s);
+        return $s;
     }
 
     #
@@ -469,6 +486,455 @@ class ParsedownExtra extends Parsedown
         }
 
         return $Element;
+    }
+    
+    /** 
+     * Table
+     * @param type $Line
+     * @param array $Block
+     * @return string
+     */
+    protected function blockTable($Line, array $Block = null)
+    {
+        if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted'])) {
+            return;
+        }
+        
+        if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '') {
+            //Get all header lines
+            $hlines = explode("\n",$Block['element']['text']);
+            
+            
+            //Get cell alignments
+            $alignments = array();
+
+            $divider = $Line['text'];
+            $divider = trim($divider);
+            $divider = trim($divider, '|');
+
+            $dividerCells = explode('|', $divider);
+
+            foreach ($dividerCells as $dividerCell)
+            {
+                $dividerCell = trim($dividerCell);
+
+                if ($dividerCell === '') {
+                    continue;
+                }
+
+                $alignment = null;
+
+                if ($dividerCell[0] === ':') {
+                    $alignment = 'left';
+                }
+
+                if (substr($dividerCell, - 1) === ':') {
+                    $alignment = $alignment === 'left' ? 'center' : 'right';
+                }
+
+                $alignments []= $alignment;
+            }
+            
+            //Start Block type
+            $Block = array(
+                'alignments' => $alignments,
+                'identified' => true,
+                'element' => array(
+                    'name' => 'table',
+                    'handler' => 'elements',
+                ),
+            );
+            
+            $Block['element']['text'] []= array(
+                'name' => 'caption',
+                'handler' => 'elements',
+                'text' => array()
+            );
+            
+            $Block['element']['text'] []= array(
+                'name' => 'thead',
+                'handler' => 'elements',
+                'text' => array(),
+            );
+
+            $Block['element']['text'] []= array(
+                'name' => 'tbody',
+                'handler' => 'elements',
+                'text' => array(),
+            );
+            
+            //Treating header lines
+            foreach($hlines as $hline) {              
+                $HeaderElements = array();
+
+                //$header = $Block['element']['text'];           
+                $header = $hline;
+                $header = trim($header);
+                $header = ltrim($header, '|');
+
+                $headerCells = explode('|', $header);
+                $colspan = 1;
+
+                foreach ($headerCells as $index => $headerCell)
+                {
+                    if($headerCell=='') {
+                        $colspan++;
+                        if($index>0) {
+                            $prev = $index -1;
+                            while($prev > -1) {
+                                if(isset($HeaderElements[$prev])) {
+                                    if(!isset($HeaderElements[$prev]['attributes']['colspan'])) {                                  
+                                      $HeaderElements[$prev]['attributes']['colspan']=$colspan;
+                                    } else {                                  
+                                      $HeaderElements[$prev]['attributes']['colspan'] += $colspan;
+                                    }
+                                    break;
+                                }
+                                $prev--;
+                            }
+                        }
+                        continue;
+                    }
+
+                    $headerCell = trim($headerCell);
+
+                    $HeaderElement = array(
+                        'name' => 'th',
+                        'text' => $headerCell,
+                        'handler' => 'line',
+                    );
+
+                    if (isset($alignments[$index]))
+                    {
+                        $HeaderElement['attributes'] = array(
+                            'style' => 'text-align: '.$alignments[$index].';',
+                        );
+                    }
+
+                    if($colspan > 1) {
+                        $Element['attributes']['colspan'] = $colspan;
+                        $colspan = 1;
+                    }
+
+                    $HeaderElements[$index]= $HeaderElement;
+                }
+
+                $Block['element']['text'][1]['text'] []= array(
+                    'name' => 'tr',
+                    'handler' => 'elements',
+                    'text' => $HeaderElements,
+                );
+            }
+            return $Block;
+        }
+    }
+
+    protected function blockTableContinue($Line, array $Block)
+    {
+        if (isset($Block['interrupted']))
+        {
+            return;
+        }
+
+        if ($Line['text'][0] === '|' or strpos($Line['text'], '|'))
+        {
+            $Elements = array();
+
+            $row = $Line['text'];
+
+            $row = preg_replace('/^ *\\| *| *\\| *$/', '', $row);
+            $cells = preg_split('/\\|/', $row);
+
+            preg_match_all('/(?:(\\\\[|])|[^|`]|`[^`]+`|`)+/', $row, $matches);
+            $colspan=1;
+
+            foreach ($cells as $index => $cell)
+            {
+                if($cell=='') {
+                    $colspan++;
+                    if($index>0) {
+                        $prev = $index -1;
+                        while($prev > -1) {
+                            if(isset($Elements[$prev])) {
+                                if(!isset($Elements[$prev]['attributes']['colspan'])) $Elements[$prev]['attributes']['colspan']=$colspan;
+                                else $Elements[$prev]['attributes']['colspan'] += $colspan;
+                                break;
+                            }
+                            $prev--;
+                        }
+                    }
+                    continue;
+                }
+                $cell = trim($cell);
+
+                $Element = array(
+                    'name' => 'td',
+                    'handler' => 'line',
+                    'text' => trim($cell),
+                );
+
+                if (isset($Block['alignments'][$index]))
+                {
+                    $Element['attributes'] = array(
+                        'style' => 'text-align: '.$Block['alignments'][$index].';',
+                    );
+                }
+                if($colspan > 1) {
+                    $Element['attributes']['colspan'] = $colspan;
+                    $colspan = 1;
+                }
+
+                $Elements [$index]= $Element;
+            }
+
+            $Element = array(
+                'name' => 'tr',
+                'handler' => 'elements',
+                'text' => $Elements,
+            );
+
+            $Block['element']['text'][2]['text'] []= $Element;
+
+            return $Block;
+        } elseif (preg_match('/^\[(.*.)\]$/', $Line['text'],$parts)) { //Get Table Caption          
+            $Block['element']['text'][0]['text'] []= array(
+                'name' => 'caption',
+                'handler' => 'line',
+                'text' => $parts[1],
+            );
+    
+          return $Block;
+        }
+    }
+
+    protected $variables=array();
+    protected function inlineGetVariable($Excerpt)
+    {
+        if (preg_match('/^\$([a-z_]+)/', $Excerpt['text'], $m) && isset($this->variables[$m[1]])) {
+            return array(
+                'extent' => strlen($m[0]),
+                'markup' => $this->variables[$m[1]],
+            );
+        }
+    }
+
+    protected function blockVariable($Line)
+    {
+        if (preg_match('/^\$([a-z_]+)=\{(.*)/', $Line['text'], $m))
+        {
+            $Block = array(
+                'id' => $m[1],
+                'markup' => $m[2],
+            );
+            return $Block;
+        }
+    }
+
+
+    protected function blockVariableContinue($Line, $Block)
+    {
+        if (isset($Block['complete'])) return;
+        else if (isset($Block['closed'])) return;
+
+        if (isset($Block['interrupted'])) {
+            unset($Block['interrupted']);
+        }
+
+        if (substr($Line['text'], 0, 1)=='}') {
+            $Block['complete'] = true;
+            return $Block;
+        }
+        $Block['markup'] .= "\n".$Line['body'];
+
+        return $Block;
+    }
+
+    protected function blockVariableComplete($Block)
+    {
+        if(isset($Block['id'])) {
+            $this->variables[$Block['id']] = $this->text($Block['markup']);
+            $Block['markup']='';
+        }
+        return $Block;
+    }
+
+    protected function blockQuote($Line)
+    {
+        if (preg_match('/^> ?(\{'.$this->regexAttribute.'+\})? ?(.*)?/', $Line['text'], $m))
+        {
+            $Block = array(
+                'element' => array(
+                    'name' => 'blockquote',
+                    'handler' => 'lines',
+                    'text' => (array) $m[2],
+                ),
+            );
+
+            if(isset($m[1]) && $m[1]) {
+                $Block['element']['name'] = 'div';
+                $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
+            }
+
+
+            return $Block;
+        }
+    }
+
+    protected function blockQuoteContinue($Line, array $Block)
+    {
+        if ($Line['body'][0] === '>' and preg_match('/^>[ ]?(.*)/', $Line['body'], $matches))
+        {
+            if($matches[1][0]=='{' || $matches[1][0]=='(') return;
+            if (isset($Block['interrupted']))
+            {
+                $Block['element']['text'] []= '';
+
+                unset($Block['interrupted']);
+            }
+
+            $Block['element']['text'] []= $matches[1];
+
+            return $Block;
+        }
+
+        if ( ! isset($Block['interrupted']))
+        {
+            $Block['element']['text'] []= $Line['body'];
+
+            return $Block;
+        }
+    }
+
+    protected function blockSection($Line, $Block)
+    {
+        if (preg_match('/^'.$Line['text'][0].'{3,} *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+            $Block = array(
+                'char' => $Line['text'][0],
+                'element' => array(
+                    'name' => 'section',
+                    'handler'=>'text',
+                    'text' => '',
+                ),
+            );
+
+            if(isset($m[1])) {
+                $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
+            }
+            unset($m);
+
+            return $Block;
+        }
+    }
+
+    protected function blockSectionContinue($Line, $Block)
+    {
+        if (isset($Block['complete'])) return;
+
+        if (isset($Block['interrupted'])) {
+            unset($Block['interrupted']);
+        }
+
+        if (preg_match('/^'.$Block['char'].'{3,} *$/', $Line['text'])) {
+            $Block['complete'] = true;
+            return $Block;
+        }
+        $Block['element']['text'] .= "\n".$Line['body'];
+
+        return $Block;
+    }
+
+    protected function blockSectionComplete($Block)
+    {
+        $Block['complete'] = true;
+        return $Block;
+    }
+
+    /**
+     * Implement: https://github.com/egil/php-markdown-extra-extended
+     */
+    protected function blockFigure($Line, $Block)
+    {
+        if (preg_match('/^'.$Line['text'][0].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+            $Block = array(
+                'char' => $Line['text'][0],
+                'element' => array(
+                    'name' => 'figure',
+                    'handler'=>'line',
+                    'text' => '',
+                ),
+            );
+
+            if (isset($m[1])) {
+                $Block['element']['caption']=substr($m[1],1,strlen($m[1])-2);
+            }
+
+            if(isset($m[2])) {
+                $Block['element']['attributes']=$this->parseAttributeData(substr($m[2],1,strlen($m[2])-2));
+            }
+            unset($m);
+
+            return $Block;
+        }
+    }
+
+    protected function blockFigureContinue($Line, $Block)
+    {
+        if (isset($Block['complete'])) return;
+
+        if (isset($Block['interrupted'])) {
+            unset($Block['interrupted']);
+        }
+
+        if (preg_match('/^'.$Block['char'].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+            if (isset($m[1])) {
+                $Block['element']['caption']=substr($m[1],1,strlen($m[1])-2);
+            }
+            if(isset($m[2])) {
+                $Block['element']['attributes']=$this->parseAttributeData(substr($m[2],1,strlen($m[2])-2));
+            }
+            unset($m);
+            $Block['complete'] = true;
+            return $Block;
+        }
+        $Block['element']['text'] .= "\n".$Line['body'];
+
+        return $Block;
+    }
+
+    protected function blockFigureComplete($Block)
+    {
+        if(isset($Block['element']['caption'])) {
+            $line = $this->line($Block['element']['caption']);
+            $Block['element']['handler']='multiple';
+            $Block['element']['text'] = array(
+                $Block['element']['text'],
+                array(
+                    'name'=>'figcaption',
+                    'text'=>$line,
+                ),
+            );
+            $Block['element']['attributes']['title']=strip_tags($line);
+            unset($Block['element']['caption']);
+        }
+        return $Block;
+    }
+
+    protected function multiple($a)
+    {
+        if(isset($a['element'])) return $this->multiple(array($a));
+        $s = '';
+        foreach($a as $i=>$Block) {
+            if(is_string($Block)) {
+                if(strpos($Block, "\n")!==false) $s.= $this->text($Block);
+                else $s.= $this->line($Block);
+            } else if(isset($Block['handler'])) {
+                $h = $Block['handler'];
+                $s .= $this->$h($Block);
+            } else if(isset($Block['name'])) {
+                $s .= $this->element($Block);
+            }
+        }
+        return $s;
     }
 
     # ~
