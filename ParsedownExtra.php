@@ -49,6 +49,7 @@ class ParsedownExtra extends Parsedown
 
     function text($text)
     {
+        $this->footnoteCount = 0;
         $markup = parent::text($text);
 
         # merge consecutive dl elements
