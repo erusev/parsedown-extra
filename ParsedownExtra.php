@@ -1212,18 +1212,17 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    protected function processText($document, $element){
+    protected function processText($document, $element)
+    {
         $nodeMarkup = $document->saveHTML($element);
 
-        $text = '';
-
-        if ($element instanceof DOMElement and !in_array($element->nodeName, $this->textLevelElements) and !in_array($element->nodeName, $this->voidElements)){
-            if( $element->hasChildNodes() ){
-                $text = $this->processTags($nodeMarkup);
-            }else{
-                $text = $nodeMarkup;
-            }
-        }else{
+        if ($element instanceof DOMElement
+            && !in_array($element->nodeName, $this->textLevelElements)
+            && !in_array($element->nodeName, $this->voidElements)
+            && $element->hasChildNodes()
+        ) {
+            $text = $this->processTags($nodeMarkup);
+        } else {
             $text = $nodeMarkup;
         }
         return $text;
@@ -1266,7 +1265,7 @@ class ParsedownExtra extends Parsedown
 
         $elementText = '';
 
-        if ($element instanceof DOMElement and $element->getAttribute('markdown') === '1')
+        if ($element instanceof DOMElement && $element->getAttribute('markdown') === '1')
         {
             if( $element->hasChildNodes() ){
                 foreach ($element->childNodes as $Node){
@@ -1285,7 +1284,9 @@ class ParsedownExtra extends Parsedown
                 foreach ($element->childNodes as $Node){
                     $elementText .= $this->processText($document, $Node);
                 }
-            }else{
+            } elseif ($element instanceof DOMElement){
+                $elementText =  $document->saveHTML($element);
+            } else {
                 $elementText =  $this->processText($document, $element);
             }
 

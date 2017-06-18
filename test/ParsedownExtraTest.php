@@ -68,4 +68,38 @@ EOF;
 
         $this->assertEquals( $expectedOutput, $parsedown->text( $markdownInput ) );
     }
+
+    public function testMultipleHtmlMarkupInline()
+    {
+        // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-80815953
+        $input = <<<EOF
+<div>1</div><p>2</p>
+The p tag (and contents), along with this line are eaten.
+EOF;
+        $expectedMarkup = <<<EOF
+<div>1</div><p>2</p>
+<p>The p tag (and contents), along with this line are eaten.</p>
+EOF;
+        $actualMarkup = (new ParsedownExtra())->text($input);
+
+        $this->assertEquals($expectedMarkup, $actualMarkup);
+    }
+
+    public function testInlineIframe()
+    {
+        // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-106090346
+        $expectedMarkup = '<iframe />';
+        $actualMarkup = (new ParsedownExtra())->text($expectedMarkup);
+
+        $this->assertEquals($expectedMarkup, $actualMarkup);
+    }
+
+    public function testStripping()
+    {
+        // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-159655861
+        $expectedMarkup = '<p><strong>Contact Method:</strong> email</p><p>Test</p><p><em>Some italic text.</em></p>';
+        $actualMarkup = (new ParsedownExtra())->text($expectedMarkup);
+
+        $this->assertEquals($expectedMarkup, $actualMarkup);
+    }
 }
