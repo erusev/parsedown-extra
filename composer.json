@@ -15,8 +15,10 @@
     "require": {
         "php": ">=5.3.6",
         "ext-dom": "*",
-        "ext-mbstring": "*",
         "erusev/parsedown": "^1.6"
+    },
+    "suggest": {
+        "ext-mbstring": "Required when the source files or the system is not utf-8 compliant."
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
