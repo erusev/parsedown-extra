@@ -363,6 +363,9 @@ class ParsedownExtra extends Parsedown
     {
         $Link = parent::inlineLink($Excerpt);
 
+        // may return null, so abort if it does
+        if (!$Link) return $Link;
+
         $remainder = substr($Excerpt['text'], $Link['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
@@ -943,31 +946,26 @@ class ParsedownExtra extends Parsedown
     {
         $Data = array();
 
-        preg_match_all('/[^\s"]+(?:"[^"]*")?/', $attributeString, $attributes);
-
-        if ( count($attributes) ) {
-            $attributes = $attributes[0];
-        } else {
-            return $Data;
-        }
+        $attributes = preg_split('/\s+/', $attributeString, null, PREG_SPLIT_NO_EMPTY);
 
         foreach ($attributes as $attribute)
         {
+            // If it's an id...
             if ($attribute[0] === '#')
             {
                 $Data['id'] = substr($attribute, 1);
             }
-            elseif ( $attribute[0] === '.' )
+
+            // Else if it's a class
+            elseif ($attribute[0] == ".")
             {
                 $classes []= substr($attribute, 1);
             }
-            elseif ( strpos($attribute, '=') )
-            {
-                preg_match('#([\w-]+)="?([\D\w-]+)"?#', $attribute, $match);
 
-                if ( !empty($match) ) {
-                    $Data[$match[1]] = $match[2];
-                }
+            // Else it must be an attribute
+            else {
+                $attr = explode('=', $attribute);
+                $Data[array_shift($attr)] = implode('=', $attr);
             }
         }
 
@@ -1076,5 +1074,16 @@ class ParsedownExtra extends Parsedown
     # Fields
     #
 
-    protected $regexAttribute = '((?:[.#:;=\-"\'\s\w]+))[^}]?';
+    /**
+     * Regex for finding attribute strings inside curly braces (e.g., {lang=en .nav-link}
+     *
+     * Explained:
+     *
+     *  * Attribute may start with any alpha-numeric character, optionally preceded by `#` or `.`
+     *  * Attribute may optionally contain `=`, `-`, or any other "word" character (`[a-zA-Z0-9_]`)
+     *  * Attribute may optionally be followed by a space and then another attribute
+     *
+     */
+    protected $regexAttribute = '(?:[#.]?[A-Za-z0-9][\w=-]* ?)';
 }
+
