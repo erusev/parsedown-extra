@@ -865,21 +865,21 @@ class ParsedownExtra extends Parsedown
     protected $variables=array();
     protected function inlineGetVariable($Excerpt)
     {
-        if (preg_match('/^\$([a-z_]+)/', $Excerpt['text'], $m) && isset($this->variables[$m[1]])) {
+        if (preg_match('/^\$([a-z_]+)/', $Excerpt['text'], $matches) && isset($this->variables[$matches[1]])) {
             return array(
-                'extent' => strlen($m[0]),
-                'markup' => $this->variables[$m[1]],
+                'extent' => strlen($matches[0]),
+                'markup' => $this->variables[$matches[1]],
             );
         }
     }
 
     protected function blockVariable($Line)
     {
-        if (preg_match('/^\$([a-z_]+)=\{(.*)/', $Line['text'], $m))
+        if (preg_match('/^\$([a-z_]+)=\{(.*)/', $Line['text'], $matches))
         {
             $Block = array(
-                'id' => $m[1],
-                'markup' => $m[2],
+                'id' => $matches[1],
+                'markup' => $matches[2],
             );
             return $Block;
         }
@@ -966,7 +966,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockSection($Line, $Block)
     {
-        if (preg_match('/^'.$Line['text'][0].'{3,} *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $m)) {
+        if (preg_match('/^'.$Line['text'][0].'{3,} *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $matches)) {
             $Block = array(
                 'char' => $Line['text'][0],
                 'element' => array(
@@ -976,10 +976,9 @@ class ParsedownExtra extends Parsedown
                 ),
             );
 
-            if(isset($m[1])) {
-                $Block['element']['attributes']=$this->parseAttributeData(substr($m[1],1,strlen($m[1])-2));
+            if(isset($matches[1])) {
+                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[1], 1, strlen($matches[1]) - 2));
             }
-            unset($m);
 
             return $Block;
         }
@@ -997,7 +996,10 @@ class ParsedownExtra extends Parsedown
             $Block['complete'] = true;
             return $Block;
         }
-        $Block['element']['text'] .= "\n".$Line['body'];
+        if ($Block['element']['text'] !== '') {
+            $Block['element']['text'] .= "\n";
+        }
+        $Block['element']['text'] .= $Line['body'];
 
         return $Block;
     }
