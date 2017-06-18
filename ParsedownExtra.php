@@ -1027,10 +1027,10 @@ class ParsedownExtra extends Parsedown
 
             if (isset($matches[1])) {
                 $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
-                $Block['caption_position'] = 'before';
+                $Block['caption']['position'] = 'before';
             }
 
-            if(isset($matches[2])) {
+            if (isset($matches[2])) {
                 $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
             }
 
@@ -1045,25 +1045,22 @@ class ParsedownExtra extends Parsedown
         }
 
         if (isset($Block['interrupted'])) {
+            $Block['element']['text'] .= "\n";
             unset($Block['interrupted']);
         }
 
         if (preg_match('/^'.$Block['char'].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $matches)) {
             if (isset($matches[1])) {
                 $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
-                $Block['caption_position'] = 'after';
+                $Block['caption']['position'] = 'after';
             }
-            if(isset($matches[2])) {
+            if (isset($matches[2])) {
                 $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
             }
             $Block['complete'] = true;
             return $Block;
         }
-        // Allow to manage cleanly a figure with a multiline markdown text.
-        if ($Block['element']['text'] !== '') {
-            $Block['element']['text'] .= "\n";
-        }
-        $Block['element']['text'] .= $Line['body'];
+        $Block['element']['text'] .= "\n" . $Line['body'];
 
         return $Block;
     }
@@ -1073,7 +1070,7 @@ class ParsedownExtra extends Parsedown
         if(isset($Block['element']['caption'])) {
             $line = $this->line($Block['element']['caption']);
             $Block['element']['handler']='multiple';
-            if ($Block['caption_position'] == 'before') {
+            if ($Block['caption']['position'] == 'before') {
                 $Block['element']['text'] = array(
                     array(
                         'name'=>'figcaption',
@@ -1092,8 +1089,13 @@ class ParsedownExtra extends Parsedown
             }
             $Block['element']['attributes']['title'] = strip_tags($line);
             unset($Block['element']['caption']);
-            unset($Block['caption_position']);
+            unset($Block['caption']['position']);
+        } else {
+            $Block['element']['handler']='multiple';
+            $Block['element']['text'] = array($Block['element']['text']);
         }
+
+        $Block['complete'] = true;
         return $Block;
     }
 
