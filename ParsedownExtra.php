@@ -1228,6 +1228,8 @@ class ParsedownExtra extends Parsedown
     # function nesting level (256 by default) too quickly when big pages are
     # processed.
     #
+    # TODO Find a better way to process markup.
+    #
     # Recursive method.
     #
 
@@ -1235,39 +1237,59 @@ class ParsedownExtra extends Parsedown
     {
         $markup = '';
 
-        if (extension_loaded('mbstring')) {
-            # http://stackoverflow.com/q/11309194/200145
-            $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
-        }
-
         # http://stackoverflow.com/q/1148928/200145
         libxml_use_internal_errors(true);
 
-        // The process is complex, because the parser works by line, so tags may
-        // be incomplete.
-        $DOMDocument = new DOMDocument('1.0', 'UTF-8');
-
-        # http://stackoverflow.com/q/4879946/200145
-        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
-        if (!$DOMDocument->hasChildNodes()) {
-            $DOMDocument = null;
+        $elementMarkupType = $this->getElementMarkupType($elementMarkup);
+        $markupType = $elementMarkupType['type'];
+        $DOMDocument = $elementMarkupType['dom'];
+        if (isset($elementMarkupType['chunk'])) {
+            $before = $elementMarkupType['before'];
+            $chunk = $elementMarkupType['chunk'];
+            $after = $elementMarkupType['after'];
+            // When the type is "html start", the text after the markup should
+            // be managed with the dom to process the attribute "markdown", if
+            // set.
+            if (strlen($after)
+                && ($markupType == 'html start' || $markupType == 'html start empty')
+            ) {
+                $element = $DOMDocument->createTextNode($after);
+                $DOMDocument->firstChild->lastChild->appendChild($element);
+                $after = '';
+            }
+        } else {
+            $chunk = '';
+            $before = '';
+            $after ='';
         }
 
         if ($DOMDocument) {
             // Process each tag, node or text.
-            foreach ($DOMDocument->childNodes as $element) {
+            $isSub = !empty($elementMarkupType['sub']);
+            $DOMbase = $isSub ? $DOMDocument->firstChild :  $DOMDocument;
+            foreach ($DOMbase->childNodes as $element) {
                 $elementText = '';
                 $elementTexts = array();
 
                 if ($element instanceof DOMElement) {
+                    // Check if xml is empty to avoid an endless recursive loop.
+                    if ($markupType === 'xml empty') {
+                        $element->removeAttribute('markdown');
+                        $markup = $DOMDocument->saveHTML($element);
+                        continue;
+                    }
                     // Process markdown if specified.
-                    if ($element->getAttribute('markdown') === '1') {
+                    elseif ($element->getAttribute('markdown') === '1') {
                         $element->removeAttribute('markdown');
                         if ($element->hasChildNodes()) {
                             foreach ($element->childNodes as $node) {
                                 $elementText .= $DOMDocument->saveHTML($node);
                             }
                         } else {
+                            if ($markupType === 'html start empty') {
+                                $markup = $DOMDocument->saveHTML($element);
+                                continue;
+                            }
                             $elementText = $DOMDocument->saveHTML($element);
                         }
 
@@ -1280,7 +1302,8 @@ class ParsedownExtra extends Parsedown
                     }
                     // No children, so save the element directly.
                     else {
-                        $elementText = $DOMDocument->saveHTML($element);
+                        // Nothing to do (the element is added below).
+                        // $elementText = $DOMDocument->saveHTML($element);
                     }
                 }
                 // Not a markup element, so process it as text.
@@ -1313,11 +1336,211 @@ class ParsedownExtra extends Parsedown
 
                 $markup .= $markupElement;
             }
+
+            switch ($markupType) {
+                case 'text':
+                case 'html':
+                case 'xml empty':
+                case 'html sub':
+                    // Nothing to do.
+                    break;
+                case 'html start':
+                case 'html start empty':
+                    $markup = $before . self::substr($markup, 0, -self::strlen($chunk)) . $after;
+                    break;
+                case 'html end':
+                    $markup = $before . $markup . $chunk . $after;
+                    break;
+            }
         }
+        elseif ($markupType === 'text') {
+            $markup = $elementMarkup;
+        }
+
 
         libxml_clear_errors();
 
         return $markup;
+    }
+
+    # ~
+
+    /**
+     * Helper to determine the type of the block: text, xml, html, partial...
+     *
+     * This method is designed to work inside the parser for markdown extra.
+     *
+     * @param string $elementMarkup
+     * @return array Associative array with the type, the DOMdocument, and in
+     * some cases the chunks.
+     */
+    protected function getElementMarkupType($elementMarkup)
+    {
+        // The process is complex, because the parser works by line, so tags may
+        // be incomplete. In paticular, the process should distinct partial tags,
+        // html void tags, mixed element markup and unicode.
+        // There should be no issue when there is only one tag by line and when
+        // there is intermediate line breaks.
+
+        if (extension_loaded('mbstring')) {
+            # http://stackoverflow.com/q/11309194/200145
+            $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
+        }
+
+        # http://stackoverflow.com/q/1148928/200145
+        libxml_use_internal_errors(true);
+
+        // Check if this is a pure text, like "_something_".
+        $cleanElementMarkup = html_entity_decode($elementMarkup, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (self::strpos($cleanElementMarkup, '<') === false
+            || self::strpos($cleanElementMarkup, '>') === false
+            || $cleanElementMarkup == strip_tags($cleanElementMarkup)
+        ) {
+            return array(
+                'type' => 'text',
+                'dom' => null,
+            );
+        }
+
+        $DOMDocument = new DOMDocument('1.0', 'UTF-8');
+
+        // Check if this is a pure and complete html, like "<div><hr>something</div>".
+        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+        $html = $DOMDocument->saveHTML();
+        $replaceFrom = array(' ', "\n", "\t", '/>');
+        $replaceTo = array('', '', '', '>');
+        $whiteMarkup = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $elementMarkup));
+        $whiteHtml = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $html));
+        $whiteHtml = html_entity_decode($whiteHtml, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $whiteCleanElementMarkup = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $cleanElementMarkup));
+        if ($whiteHtml === $whiteCleanElementMarkup) {
+            // Manage an exception when the input is the root alone ("<iframe/>",
+            // "<hr>", "<div></div>"), in which case Dom duplicates it (but not
+            // for "<div>zzzz</div>").
+            $xmlElementMarkup = $DOMDocument->saveXML();
+            $xml = @simplexml_load_string($xmlElementMarkup);
+            if ($xml !== false && count($xml->children()) === 0 && strip_tags($xml) === '') {
+                $htmlDivElementMarkup = '<div>' . $elementMarkup. '</div>';
+                $DOMDocument->loadHTML($htmlDivElementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+                return array(
+                    'type' => 'xml empty',
+                    'sub' => true,
+                    'dom' => $DOMDocument,
+                );
+            }
+            return array(
+                'type' => 'html',
+                'dom' => $DOMDocument,
+            );
+        }
+
+        // In next cases, the input is not readable directly by dom.
+        // Of course, a regex can't be used as a parser for xml, so DOMDocument
+        // is used anyway. But it automatically
+        // - removes useless whitespace (from "<hr id='id' >" to "<hr id='id'>",
+        // - lowercases of the tags, from "<DIV></DIV>" to "<div></div>",
+        // - removes useless "/" (from "<br />" to "<br>"),
+        // - reformats partial chunks (from "<div>first</div><p>second</p>" to "<div>first<p>second</p></div>",
+        // - protects single text by adding a "<p>" and a "</p>",
+        // - adds missing closing tags (from "<div>zzz" to "<div>zzz</div>"),
+        // - removes single closing tags (from "</div>" to ""),
+        // - has many other special cases.
+        // So each of these cases should be managed.
+        // To simplify the checks, the tag "div" is added as a root of the input
+        // and will be removed after.
+        // TODO Manage xhtml instead of html 5.
+        // TODO Manage mixed block with start and end tags.
+        $htmlDivElementMarkup = '<div>' . $elementMarkup. '</div>';
+
+        // Check if this is a sublevel of html, like "<div>first</div><hr><div>second</div>".
+        $DOMDocument->loadHTML($htmlDivElementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+        $divHtml = $DOMDocument->saveHTML();
+        $whiteDivHtml = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $divHtml));
+        $whiteDivHtml = html_entity_decode($whiteDivHtml, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $whiteCleanElementMarkup = '<div>' . self::strtolower(self::str_replace($replaceFrom, $replaceTo, $cleanElementMarkup)) . '</div>';
+        if ($whiteDivHtml === $whiteCleanElementMarkup) {
+            return array(
+                'type' => 'html sub',
+                'sub' => true,
+                'dom' => $DOMDocument,
+            );
+        }
+
+        // Here, the string is a partial html one, like "<div>", "</div>",
+        // "<div><div>zzz" or "</div>zzz".
+        // So, first, separate raw text and tags.
+        $startTag = self::strpos($elementMarkup, '<');
+        $endTag = self::strrpos($elementMarkup, '>');
+        $startWithText = $startTag !== 0;
+        $endWithText = $endTag !== self::strlen($elementMarkup) - 1;
+        $beforeMarkup = $startWithText ? self::substr($elementMarkup, 0, $startTag) : '';
+        $afterMarkup = $endWithText ? self::substr($elementMarkup, $endTag + 1) : '';
+        $partialElementMarkup = $startWithText || $endWithText
+            ? self::substr($elementMarkup, $startTag, $endTag - $startTag + 1)
+            : $elementMarkup;
+
+        // Second, determine if the partial is an opening ("<div>")  or a
+        // closing ("</div>").
+        $partialDivElementMarkup = '<div>' . $partialElementMarkup . '</div>';
+        $DOMDocument->loadHTML($partialDivElementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+        $divPartialHtml = $DOMDocument->saveHTML();
+        $whiteDivPartialHtml = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $divPartialHtml));
+        $cleanElementMarkup = html_entity_decode($partialDivElementMarkup, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $whiteCleanElementMarkup = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $cleanElementMarkup));
+
+        // A simple size comparaison is done, because dom adds the missing
+        // closing tag, but removes the alone closing tag.
+        $lengthInput = self::strlen($whiteDivPartialHtml);
+        $lengthClean = self::strlen($whiteCleanElementMarkup);
+        $lengthDifference = $lengthInput - $lengthClean;
+        // A difference of 0 is a case like "<hr>", already managed, or a block
+        // that contains missing start and end tags simultaneously.
+        // TODO Check when a block contains missing start and end tags simultaneously.
+        $isStartOfChunk = $lengthDifference >= 0;
+        if ($isStartOfChunk) {
+            $markupType = 'html start';
+            // The string that is added automatically, to be removed later.
+            $chunk = self::substr(self::substr($whiteDivPartialHtml, 5, $lengthInput - 11), -$lengthDifference);
+            // Check if this is an empty html start, like a "<section>" alone.
+            $xml = @simplexml_import_dom($DOMDocument);
+            if ($xml !== false && count($xml->children()) === 1 && strip_tags($xml) === '') {
+                $markupType = 'html start empty';
+            }
+        } else {
+            // Need to manage the special case where the html is the root
+            // alone, in which case Dom duplicates it.
+            if (trim($DOMDocument->saveHTML()) === '<div></div>') {
+                $markupType = 'text';
+                $DOMDocument = null;
+                $chunk = null;
+            }
+            // Check if the chunk is before or after the html.
+            else {
+                $markupType = 'html end';
+                $whitePartial = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $partialElementMarkup));
+                $pos = self::strpos($whitePartial, $whiteHtml);
+                // This is a single partial tag ("</div>") or the partial tag is
+                // after something else, like "<div>zzzz</div></div>".
+                if (empty($pos)) {
+                    // The string that is removed automatically, to be added later.
+                    $chunk = self::substr($partialElementMarkup, self::strlen($html));
+                }
+                // The partial tag is before something else, like "</div><div>zzzz</div>".
+                else {
+                    $beforeMarkup .= self::substr($partialElementMarkup, 0, self::strpos($partialElementMarkup, trim($html)));
+                    $chunk = '';
+                }
+             }
+        }
+
+        return array(
+            'type' => $markupType,
+            'sub' => $markupType !== 'text',
+            'dom' => $DOMDocument,
+            'before' => $beforeMarkup,
+            'chunk' => $chunk,
+            'after' => $afterMarkup,
+        );
     }
 
     # ~
@@ -1330,6 +1553,25 @@ class ParsedownExtra extends Parsedown
     #
     # Unicode compatibiliy layer.
     #
+
+    /**
+     * A compatibility layer to get the last position of a character in a unicode string.
+     *
+     * @param string $haystack
+     * @param string $needle
+     * @param int $offset
+     * @return boolean|number
+     */
+    static protected function strrpos($haystack, $needle, $offset = 0)
+    {
+        if (extension_loaded('mbstring')) {
+            return mb_strrpos($haystack, $needle, $offset);
+        } elseif (extension_loaded('iconv')) {
+            return iconv_strrpos($haystack, $needle, $offset);
+        } else {
+            return strrpos($haystack, $needle, $offset);
+        }
+    }
 
     /**
      * A compatibility layer to replace a string inside a unicode string.

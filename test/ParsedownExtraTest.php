@@ -80,7 +80,8 @@ EOF;
     public function testOneLineMultipleHtmlMarkup()
     {
         $input = '<div>First paragraph.</div><p>Second paragraph.</p>';
-        $expectedMarkup = '<div>First paragraph.</div><p>Second paragraph.</p>';
+        $expectedMarkup = '<div>First paragraph.</div>
+<p>Second paragraph.</p>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
@@ -88,14 +89,15 @@ EOF;
 
     public function testOneMultilineOneHtmlMarkup()
     {
-        $input = '<p>Third
+        $input = '<div>Third
 paragraph
 
-multiline</p>';
-        $expectedMarkup = '<p>Third
+multiline
+</div>';
+        $expectedMarkup = '<div>Third
 paragraph
-
-multiline</p>';
+<p>multiline</p>
+</div>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
@@ -103,14 +105,17 @@ multiline</p>';
 
     public function testOneMultilineMultipleHtmlMarkup()
     {
-        $input = '<div>First paragraph.</div><p>Second paragraph.</p><p>Third
+        $input = '<div>First paragraph.</div><p>Second paragraph.</p><div>Third
 paragraph
 
-multiline</p>';
-        $expectedMarkup = '<div>First paragraph.</div><p>Second paragraph.</p><p>Third
+multiline
+</div>';
+        $expectedMarkup = '<div>First paragraph.</div>
+<p>Second paragraph.</p>
+<div>Third
 paragraph
-
-multiline</p>';
+<p>multiline</p>
+</div>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
@@ -124,7 +129,7 @@ The p tag (and contents), along with this line were eaten.
 EOF;
         $expectedMarkup = <<<EOF
 <div>1</div>
-<p>The p tag (and contents), along with this line were eaten.</p>
+The p tag (and contents), along with this line were eaten.
 EOF;
         $actualMarkup = (new ParsedownExtra())->text($input);
 
@@ -139,8 +144,9 @@ EOF;
 The p tag (and contents), along with this line are eaten.
 EOF;
         $expectedMarkup = <<<EOF
-<div>1</div><p>2</p>
-<p>The p tag (and contents), along with this line are eaten.</p>
+<div>1</div>
+<p>2</p>
+The p tag (and contents), along with this line are eaten.
 EOF;
         $actualMarkup = (new ParsedownExtra())->text($input);
 
@@ -150,7 +156,8 @@ EOF;
     public function testInlineIframe()
     {
         // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-106090346
-        $expectedMarkup = '<iframe />';
+        $input = '<iframe />';
+        $expectedMarkup = '<iframe></iframe>';
         $actualMarkup = (new ParsedownExtra())->text($expectedMarkup);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
@@ -160,7 +167,9 @@ EOF;
     {
         // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-159655861
         $input = '<p><strong>Contact Method:</strong> email</p><p>Test</p><p><em>Some italic text.</em></p>';
-        $expectedMarkup = '<p><strong>Contact Method:</strong> email</p><p>Test</p><p><em>Some italic text.</em></p>';
+        $expectedMarkup = '<p><strong>Contact Method:</strong> email</p>
+<p>Test</p>
+<p><em>Some italic text.</em></p>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
