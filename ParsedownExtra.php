@@ -1241,16 +1241,20 @@ class ParsedownExtra extends Parsedown
         $elementMarkupType = $this->getElementMarkupType($elementMarkup);
         $markupType = $elementMarkupType['type'];
         $DOMDocument = $elementMarkupType['dom'];
+
+        switch ($markupType) {
+            case 'html opening empty':
+                return self::str_replace('mardown="1"', '', $elementMarkup);
+        }
+
         if (isset($elementMarkupType['chunk'])) {
             $before = $elementMarkupType['before'];
             $chunk = $elementMarkupType['chunk'];
             $after = $elementMarkupType['after'];
-            // When the type is "html start", the text after the markup should
+            // When the type is "html opening", the text after the markup should
             // be managed with the dom to process the attribute "markdown", if
             // set.
-            if (strlen($after)
-                && ($markupType == 'html start' || $markupType == 'html start empty')
-            ) {
+            if (strlen($after) && ($markupType == 'html opening')) {
                 $element = $DOMDocument->createTextNode($after);
                 $DOMDocument->firstChild->lastChild->appendChild($element);
                 $after = '';
@@ -1284,7 +1288,7 @@ class ParsedownExtra extends Parsedown
                                 $elementText .= $DOMDocument->saveHTML($node);
                             }
                         } else {
-                            if ($markupType === 'html start empty') {
+                            if ($markupType === 'html opening empty') {
                                 $markup = $DOMDocument->saveHTML($element);
                                 continue;
                             }
@@ -1342,11 +1346,11 @@ class ParsedownExtra extends Parsedown
                 case 'html sub':
                     // Nothing to do.
                     break;
-                case 'html start':
-                case 'html start empty':
+                case 'html opening':
+                case 'html opening empty':
                     $markup = $before . self::substr($markup, 0, -self::strlen($chunk)) . $after;
                     break;
-                case 'html end':
+                case 'html closing':
                     $markup = $before . $markup . $chunk . $after;
                     break;
             }
@@ -1488,33 +1492,34 @@ class ParsedownExtra extends Parsedown
 
         // A simple size comparaison is done, because dom adds the missing
         // closing tag, but removes the alone closing tag.
+        // TODO Check when a block contains missing start and end tags simultaneously.
         $lengthInput = self::strlen($whiteDivPartialHtml);
         $lengthClean = self::strlen($whiteCleanElementMarkup);
         $lengthDifference = $lengthInput - $lengthClean;
         // A difference of 0 is a case like "<hr>", already managed, or a block
         // that contains missing start and end tags simultaneously.
-        // TODO Check when a block contains missing start and end tags simultaneously.
         $isStartOfChunk = $lengthDifference >= 0;
         if ($isStartOfChunk) {
-            $markupType = 'html start';
+            $markupType = 'html opening';
             // The string that is added automatically, to be removed later.
             $chunk = self::substr(self::substr($whiteDivPartialHtml, 5, $lengthInput - 11), -$lengthDifference);
-            // Check if this is an empty html start, like a "<section>" alone.
+            // Check if this is an empty html opening, like a "<section>" alone.
             $xml = @simplexml_import_dom($DOMDocument);
-            if ($xml !== false && count($xml->children()) === 1 && strip_tags($xml) === '') {
-                $markupType = 'html start empty';
+            if ($xml !== false && count($xml->children()) === 1 && trim(strip_tags($xml)) === '') {
+                $markupType = 'html opening empty';
             }
         } else {
             // Need to manage the special case where the html is the root
-            // alone, in which case Dom duplicates it.
-            if (trim($DOMDocument->saveHTML()) === '<div></div>') {
+            // alone, in which case Dom duplicates it, or it contains only
+            // closing tags,
+            if (preg_match('~^<div\>\s*\</div\>$~', $DOMDocument->saveHTML())) {
                 $markupType = 'text';
                 $DOMDocument = null;
                 $chunk = null;
             }
             // Check if the chunk is before or after the html.
             else {
-                $markupType = 'html end';
+                $markupType = 'html closing';
                 $whitePartial = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $partialElementMarkup));
                 $pos = $whiteHtml
                     ? self::strpos($whitePartial, $whiteHtml)
