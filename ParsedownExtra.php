@@ -28,6 +28,8 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
 
+        parent::__construct();
+
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
@@ -89,13 +91,13 @@ class ParsedownExtra extends Parsedown
         if ($this->getExtendedSupport()) {
             $this->BlockTypes['$'][] = 'Variable';
             $this->InlineTypes['$'][] = 'GetVariable';
-            $this->inlineMarkerList .= '$';
+            self::$inlineMarkerList .= '$';
             $this->BlockTypes['-'][] = 'Section';
             $this->BlockTypes['='][] = 'Figure';
         } else {
             unset($this->BlockTypes['$']);
             unset($this->InlineTypes['$']);
-            $this->inlineMarkerList = str_replace('$', '', $this->inlineMarkerList);
+            self::$inlineMarkerList = str_replace('$', '', self::$inlineMarkerList);
             $key = array_search('Section', $this->BlockTypes['-']);
             if ($key !== false) {
                 unset($this->BlockTypes['-'][$key]);
@@ -166,7 +168,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockFootnoteContinue($Line, $Block)
     {
-        if ($Line['text'][0] === '[' and preg_match('/^\[\^(.+?)\]:/', $Line['text']))
+        if (self::substr($Line['text'], 0, 1) === '[' && preg_match('/^\[\^(.+?)\]:/', $Line['text']))
         {
             return;
         }
@@ -204,7 +206,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionList($Line, $Block)
     {
-        if ( ! isset($Block) or isset($Block['type']))
+        if ( ! isset($Block) || isset($Block['type']))
         {
             return;
         }
@@ -235,7 +237,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionListContinue($Line, array $Block)
     {
-        if ($Line['text'][0] === ':')
+        if (self::substr($Line['text'], 0, 1) === ':')
         {
             $Block = $this->addDdElement($Line, $Block);
 
@@ -243,7 +245,7 @@ class ParsedownExtra extends Parsedown
         }
         else
         {
-            if (isset($Block['interrupted']) and $Line['indent'] === 0)
+            if (isset($Block['interrupted']) && $Line['indent'] === 0)
             {
                 return;
             }
@@ -256,7 +258,7 @@ class ParsedownExtra extends Parsedown
                 unset($Block['interrupted']);
             }
 
-            $text = substr($Line['body'], min($Line['indent'], 4));
+            $text = self::substr($Line['body'], min($Line['indent'], 4));
 
             $Block['dd']['text'] .= "\n" . $text;
 
@@ -282,7 +284,7 @@ class ParsedownExtra extends Parsedown
 
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            $Block['element']['text'] = self::substr($Block['element']['text'], 0, $matches[0][1]);
         }
 
         return $Block;
@@ -314,7 +316,7 @@ class ParsedownExtra extends Parsedown
 
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            $Block['element']['text'] = self::substr($Block['element']['text'], 0, $matches[0][1]);
         }
 
         return $Block;
@@ -325,7 +327,8 @@ class ParsedownExtra extends Parsedown
 
     protected function blockFencedCode($Line)
     {
-        if (preg_match('/^(['.$Line['text'][0].']{3,}[ ]*([\w-]+)?)([ ]+\{('.$this->regexAttribute.'+)\})?[ ]*$/', $Line['text'], $matches))
+        $firstCharacter = self::substr($Line['text'], 0, 1);
+        if (preg_match('/^([' . preg_quote($firstCharacter, '/') . ']{3,}[ ]*([\w-]+)?)([ ]+\{('.$this->regexAttribute.'+)\})?[ ]*$/', $Line['text'], $matches))
         {
             $new_line = $matches[1];
 
@@ -384,7 +387,7 @@ class ParsedownExtra extends Parsedown
             );
 
             return array(
-                'extent' => strlen($matches[0]),
+                'extent' => self::strlen($matches[0]),
                 'element' => $Element,
             );
         }
@@ -399,13 +402,13 @@ class ParsedownExtra extends Parsedown
     {
         $Inline = parent::inlineImage($Excerpt);
 
-        $remainder = substr($Excerpt['text'], $Inline['extent']);
+        $remainder = self::substr($Excerpt['text'], $Inline['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
             $Inline['element']['attributes'] += $this->parseAttributeData($matches[1]);
 
-            $Inline['extent'] += strlen($matches[0]);
+            $Inline['extent'] += self::strlen($matches[0]);
         }
 
         return $Inline;
@@ -441,9 +444,9 @@ class ParsedownExtra extends Parsedown
         {
             $Element['text'] = $matches[1];
 
-            $extent += strlen($matches[0]);
+            $extent += self::strlen($matches[0]);
 
-            $remainder = substr($remainder, $extent);
+            $remainder = self::substr($remainder, $extent);
         }
         else
         {
@@ -456,23 +459,22 @@ class ParsedownExtra extends Parsedown
 
             if (isset($matches[2]))
             {
-                $Element['attributes']['title'] = substr($matches[2], 1, - 1);
+                $Element['attributes']['title'] = self::substr($matches[2], 1, - 1);
             }
 
-            $extent += strlen($matches[0]);
+            $extent += self::strlen($matches[0]);
         }
         else
         {
             if (preg_match('/^\s*\[(.*?)\]/', $remainder, $matches))
             {
-                $definition = strlen($matches[1]) ? $matches[1] : $Element['text'];
-                $definition = strtolower($definition);
-
-                $extent += strlen($matches[0]);
+                $definition = self::strlen($matches[1]) ? $matches[1] : $Element['text'];
+                $definition = self::strtolower($definition);
+                $extent += self::strlen($matches[0]);
             }
             else
             {
-                $definition = strtolower($Element['text']);
+                $definition = self::strtolower($Element['text']);
             }
 
             if ( ! isset($this->DefinitionData['Reference'][$definition]))
@@ -490,7 +492,7 @@ class ParsedownExtra extends Parsedown
             $Element['attributes'] = $Definition + $Element['attributes'];
         }
 
-        $Element['attributes']['href'] = str_replace(array('&', '<'), array('&amp;', '&lt;'), $Element['attributes']['href']);
+        $Element['attributes']['href'] = self::str_replace(array('&', '<'), array('&amp;', '&lt;'), $Element['attributes']['href']);
 
         return array(
             'extent' => $extent,
@@ -503,15 +505,17 @@ class ParsedownExtra extends Parsedown
         $Link = $this->_inlineLink($Excerpt);
 
         // may return null, so abort if it does
-        if (!$Link) return $Link;
+        if (!$Link) {
+            return $Link;
+        }
 
-        $remainder = substr($Excerpt['text'], $Link['extent']);
+        $remainder = self::substr($Excerpt['text'], $Link['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
             $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
 
-            $Link['extent'] += strlen($matches[0]);
+            $Link['extent'] += self::strlen($matches[0]);
         }
 
         return $Link;
@@ -544,7 +548,7 @@ class ParsedownExtra extends Parsedown
 
     protected function addDdElement(array $Line, array $Block)
     {
-        $text = substr($Line['text'], 1);
+        $text = self::substr($Line['text'], 1);
         $text = trim($text);
 
         unset($Block['dd']);
@@ -609,9 +613,9 @@ class ParsedownExtra extends Parsedown
                 $backLinksMarkup .= ' <a href="#fnref'.$fnPrefix.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
-            $backLinksMarkup = substr($backLinksMarkup, 1);
+            $backLinksMarkup = self::substr($backLinksMarkup, 1);
 
-            if (substr($text, - 4) === '</p>')
+            if (self::substr($text, - 4) === '</p>')
             {
                 $backLinksMarkup = '&#160;'.$backLinksMarkup;
 
@@ -640,7 +644,7 @@ class ParsedownExtra extends Parsedown
         $regex = '/^\[(.+?)\]:[ ]*<?(\S+?)>?(?:[ ]+["\'(](.*)["\')])?[ ]*(?:{(?:' . $this->regexAttribute . '+)})?[ ]*$/';
         if (preg_match($regex, $Line['text'], $matches))
         {
-            $id = strtolower($matches[1]);
+            $id = self::strtolower($matches[1]);
 
             $Data = array(
                 'url' => $matches[2],
@@ -675,12 +679,12 @@ class ParsedownExtra extends Parsedown
      */
     protected function blockTable($Line, array $Block = null)
     {
-        if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted']))
+        if ( ! isset($Block) || isset($Block['type']) || isset($Block['interrupted']))
         {
             return;
         }
 
-        if (strpos($Block['element']['text'], '|') !== false and chop($Line['text'], ' -:|') === '')
+        if (self::strpos($Block['element']['text'], '|') !== false && chop($Line['text'], ' -:|') === '')
         {
             $alignments = array();
 
@@ -702,12 +706,12 @@ class ParsedownExtra extends Parsedown
 
                 $alignment = null;
 
-                if ($dividerCell[0] === ':')
+                if (self::substr($dividerCell, 0, 1) === ':')
                 {
                     $alignment = 'left';
                 }
 
-                if (substr($dividerCell, - 1) === ':')
+                if (self::substr($dividerCell, - 1) === ':')
                 {
                     $alignment = $alignment === 'left' ? 'center' : 'right';
                 }
@@ -828,7 +832,7 @@ class ParsedownExtra extends Parsedown
             return;
         }
 
-        if ($Line['text'][0] === '|' or strpos($Line['text'], '|'))
+        if (self::strpos($Line['text'], '|') !== false)
         {
             $Elements = array();
 
@@ -908,7 +912,7 @@ class ParsedownExtra extends Parsedown
     {
         if (preg_match('/^\$([a-z_]+)/', $Excerpt['text'], $matches) && isset($this->variables[$matches[1]])) {
             return array(
-                'extent' => strlen($matches[0]),
+                'extent' => self::strlen($matches[0]),
                 'markup' => $this->variables[$matches[1]],
             );
         }
@@ -937,7 +941,7 @@ class ParsedownExtra extends Parsedown
             unset($Block['interrupted']);
         }
 
-        if (substr($Line['text'], 0, 1)=='}') {
+        if (self::substr($Line['text'], 0, 1) === '}') {
             $Block['complete'] = true;
             return $Block;
         }
@@ -982,9 +986,10 @@ class ParsedownExtra extends Parsedown
 
     protected function blockQuoteContinue($Line, array $Block)
     {
-        if ($Line['text'][0] === '>' and preg_match('/^>[ ]?(.*)/', $Line['text'], $matches))
+        if (self::substr($Line['text'], 0, 1) === '>' && preg_match('/^>[ ]?(.*)/', $Line['text'], $matches))
         {
-            if (isset($matches[1][0]) && ($matches[1][0]=='{' || $matches[1][0]=='(')) {
+            $firstCharacter = self::substr($matches[1], 0, 1);
+            if ($firstCharacter === '{' || $firstCharacter === '(') {
                 return;
             }
             if (isset($Block['interrupted']))
@@ -1009,9 +1014,10 @@ class ParsedownExtra extends Parsedown
 
     protected function blockSection($Line, $Block)
     {
-        if (preg_match('/^'.$Line['text'][0].'{3,} *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $matches)) {
+        $firstCharacter = self::substr($Line['text'], 0, 1);
+        if (preg_match('/^' . preg_quote($firstCharacter, '/') . '{3,} *(\{' . $this->regexAttribute . '+\})? *$/', $Line['text'], $matches)) {
             $Block = array(
-                'char' => $Line['text'][0],
+                'char' => $firstCharacter,
                 'element' => array(
                     'name' => 'section',
                     'handler'=>'text',
@@ -1020,7 +1026,7 @@ class ParsedownExtra extends Parsedown
             );
 
             if(isset($matches[1])) {
-                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[1], 1, strlen($matches[1]) - 2));
+                $Block['element']['attributes'] = $this->parseAttributeData(self::substr($matches[1], 1, self::strlen($matches[1]) - 2));
             }
 
             return $Block;
@@ -1056,9 +1062,10 @@ class ParsedownExtra extends Parsedown
      */
     protected function blockFigure($Line, $Block)
     {
-        if (preg_match('/^'.$Line['text'][0].'{3,} *(\[.*\])? *(\{' . $this->regexAttribute . '+\})? *$/', $Line['text'], $matches)) {
+        $firstCharacter = self::substr($Line['text'], 0, 1);
+        if (preg_match('/^' . preg_quote($firstCharacter, '/') . '{3,} *(?:\[(.*)\])? *(?:\{(' . $this->regexAttribute . '+)\})? *$/', $Line['text'], $matches)) {
             $Block = array(
-                'char' => $Line['text'][0],
+                'char' => $firstCharacter,
                 'element' => array(
                     'name' => 'figure',
                     'handler'=>'line',
@@ -1067,12 +1074,12 @@ class ParsedownExtra extends Parsedown
             );
 
             if (isset($matches[1])) {
-                $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
+                $Block['element']['caption'] = $matches[1];
                 $Block['caption']['position'] = 'before';
             }
 
             if (isset($matches[2])) {
-                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
+                $Block['element']['attributes'] = $this->parseAttributeData($matches[2]);
             }
 
             return $Block;
@@ -1090,13 +1097,13 @@ class ParsedownExtra extends Parsedown
             unset($Block['interrupted']);
         }
 
-        if (preg_match('/^'.$Block['char'].'{3,} *(\[.*\])? *(\{'.$this->regexAttribute.'+\})? *$/', $Line['text'], $matches)) {
+        if (preg_match('/^' . preg_quote($Block['char'], '/') . '{3,} *(?:\[(.*)\])? *(?:\{(' . $this->regexAttribute . '+)\})? *$/', $Line['text'], $matches)) {
             if (isset($matches[1])) {
-                $Block['element']['caption'] = substr($matches[1], 1, strlen($matches[1]) - 2);
+                $Block['element']['caption'] = $matches[1];
                 $Block['caption']['position'] = 'after';
             }
             if (isset($matches[2])) {
-                $Block['element']['attributes'] = $this->parseAttributeData(substr($matches[2], 1, strlen($matches[2]) - 2));
+                $Block['element']['attributes'] = $this->parseAttributeData($matches[2]);
             }
             $Block['complete'] = true;
             return $Block;
@@ -1148,7 +1155,8 @@ class ParsedownExtra extends Parsedown
         $output = '';
         foreach ($Blocks as $Block) {
             if (is_string($Block)) {
-                if (strpos($Block, "\n") !== false) {
+                $pos = self::strpos($Block, "\n");
+                if ($pos !== false) {
                     $output .= $this->text($Block);
                 } else {
                     $output .= $this->line($Block);
@@ -1179,20 +1187,21 @@ class ParsedownExtra extends Parsedown
 
         foreach ($attributes as $attribute)
         {
+            $firstCharacter = self::substr($attribute, 0, 1);
             // If it's an id...
-            if ($attribute[0] === '#')
+            if ($firstCharacter === '#')
             {
-                $Data['id'] = substr($attribute, 1);
+                $Data['id'] = self::substr($attribute, 1);
             }
 
             // Else if it's a class
-            elseif ($attribute[0] === ".")
+            elseif ($firstCharacter === ".")
             {
-                $classes []= substr($attribute, 1);
+                $classes [] = self::substr($attribute, 1);
             }
 
             // Else it must be an attribute
-            elseif ( strpos($attribute, '=') )
+            elseif (self::strpos($attribute, '='))
             {
                 preg_match('#([\w-]+)="?([\D\w-]+)"?#', $attribute, $match);
 
@@ -1328,6 +1337,33 @@ class ParsedownExtra extends Parsedown
     protected function sortFootnotes($A, $B) # callback
     {
         return $A['number'] - $B['number'];
+    }
+
+    #
+    # Unicode compatibiliy layer.
+    #
+
+    /**
+     * A compatibility layer to replace a string inside a unicode string.
+     *
+     * Note: this is not a full replacement of the function.
+     *
+     * @param string|array $search
+     * @param string|array $replace
+     * @param string|array $subject
+     * @param int $count
+     * @return string|array
+     */
+    static protected function str_replace($search, $replace, $subject, &$count = null)
+    {
+        if (extension_loaded('mbstring') || extension_loaded('iconv')) {
+            $pattern = is_array($search)
+                ? array_map(function ($v) { return '/' . preg_quote($v, '/') . '/'; }, $search)
+                : '/' . preg_quote($search, '/') . '/';
+            return preg_replace($pattern, $replace, $subject);
+        } else {
+            return str_replace($search, $replace, $subject);
+        }
     }
 
     #
