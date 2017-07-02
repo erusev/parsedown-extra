@@ -1221,23 +1221,15 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    protected function processText($document, $element)
-    {
-        $nodeMarkup = $document->saveHTML($element);
-
-        if ($element instanceof DOMElement
-            && !in_array($element->nodeName, $this->textLevelElements)
-            && !in_array($element->nodeName, $this->voidElements)
-            && $element->hasChildNodes()
-        ) {
-            $text = $this->processTags($nodeMarkup);
-        } else {
-            $text = $nodeMarkup;
-        }
-        return $text;
-    }
-
-    # ~
+    #
+    # Process block of markups with or without the attribute markdown="1".
+    #
+    # Note: This is a single recursive method, so it avoids to reach the maximum
+    # function nesting level (256 by default) too quickly when big pages are
+    # processed.
+    #
+    # Recursive method.
+    #
 
     protected function processTags($elementMarkup) # recursive
     {
@@ -1251,83 +1243,79 @@ class ParsedownExtra extends Parsedown
         # http://stackoverflow.com/q/1148928/200145
         libxml_use_internal_errors(true);
 
-        // Check if the xml is self-contained (e.g. not <div>first</div><div>second</div>).
-        $xml = @simplexml_load_string($elementMarkup);
-        $isSelfContained = is_object($xml);
-
+        // The process is complex, because the parser works by line, so tags may
+        // be incomplete.
         $DOMDocument = new DOMDocument('1.0', 'UTF-8');
 
-        if ($isSelfContained) {
-            # http://stackoverflow.com/q/4879946/200145
-            $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
-
-            if ($DOMDocument->hasChildNodes()){
-                foreach ($DOMDocument->childNodes as $childElement) {
-                    $markup .= $this->processTag( $DOMDocument, $childElement);
-                }
-            }
+        # http://stackoverflow.com/q/4879946/200145
+        $DOMDocument->loadHTML($elementMarkup, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
+        if (!$DOMDocument->hasChildNodes()) {
+            $DOMDocument = null;
         }
-        // Process incomplete, partial or not-single child nodes.
-        else {
-            // Set an outer div, but process only its children.
-            $DOMDocument->loadHTML('<X>' . $elementMarkup . '</X>', LIBXML_NOBLANKS | LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_COMPACT);
-            foreach ($DOMDocument->childNodes as $childElement) {
-                if ($childElement->hasChildNodes()) {
-                    foreach ($childElement->childNodes as $Node) {
-                        $markup .= $DOMDocument->saveHTML($Node);
+
+        if ($DOMDocument) {
+            // Process each tag, node or text.
+            foreach ($DOMDocument->childNodes as $element) {
+                $elementText = '';
+                $elementTexts = array();
+
+                if ($element instanceof DOMElement) {
+                    // Process markdown if specified.
+                    if ($element->getAttribute('markdown') === '1') {
+                        $element->removeAttribute('markdown');
+                        if ($element->hasChildNodes()) {
+                            foreach ($element->childNodes as $node) {
+                                $elementText .= $DOMDocument->saveHTML($node);
+                            }
+                        } else {
+                            $elementText = $DOMDocument->saveHTML($element);
+                        }
+
+                        # The process may be recursive (and below).
+                        $elementText = "\n" . $this->text($elementText) . "\n";
                     }
-                } else {
-                    $markup = $DOMDocument->saveHTML($childElement);
+                    // Don't process markdown, but some children may be processed.
+                    elseif ($element->hasChildNodes()) {
+                        $elementTexts = $element->childNodes;
+                    }
+                    // No children, so save the element directly.
+                    else {
+                        $elementText = $DOMDocument->saveHTML($element);
+                    }
+                }
+                // Not a markup element, so process it as text.
+                else {
+                    $elementTexts = array($element);
                 }
 
-                $childElement->removeAttribute('markdown');
-                $markup = "\n" . $this->text($markup) . "\n";
+                foreach ($elementTexts as $node) {
+                    $nodeMarkup = $DOMDocument->saveHTML($node);
+                    # The process may be recursive (and above).
+                    if ($node instanceof DOMElement
+                        && !in_array($node->nodeName, $this->textLevelElements)
+                        && !in_array($node->nodeName, $this->voidElements)
+                        && $node->hasChildNodes()
+                        # These quick checks avoid most of the recursive calls.
+                        && trim($nodeMarkup)
+                        && self::strpos($nodeMarkup, '<') !== false
+                    ) {
+                        $elementText .= $this->processTags($nodeMarkup);
+                    } else {
+                        $elementText .= $nodeMarkup;
+                    }
+                }
+
+                # Because we don't want for markup to get encoded.
+                $element->nodeValue = 'placeholder\x1A';
+
+                $markupElement = $DOMDocument->saveHTML($element);
+                $markupElement = self::str_replace('placeholder\x1A', $elementText, $markupElement);
+
+                $markup .= $markupElement;
             }
         }
 
         libxml_clear_errors();
-
-        return $markup;
-    }
-
-    # ~
-
-    protected function processTag($document, $element) # recursive
-    {
-        $elementText = '';
-
-        if ($element instanceof DOMElement && $element->getAttribute('markdown') === '1')
-        {
-            if( $element->hasChildNodes() ){
-                foreach ($element->childNodes as $Node){
-                    $elementText .= $document->saveHTML($Node);
-                }
-            }else{
-                $elementText = $document->saveHTML($element);
-            }
-
-            $element->removeAttribute('markdown');
-            $elementText = "\n".$this->text($elementText)."\n";
-        }
-        else
-        {
-            if( $element->hasChildNodes() ){
-                foreach ($element->childNodes as $Node){
-                    $elementText .= $this->processText($document, $Node);
-                }
-            } elseif ($element instanceof DOMElement){
-                $elementText =  $document->saveHTML($element);
-            } else {
-                $elementText =  $this->processText($document, $element);
-            }
-
-        }
-
-        # because we don't want for markup to get encoded
-        $element->nodeValue = 'placeholder\x1A';
-
-        $markup = $document->saveHTML($element);
-        $markup = str_replace('placeholder\x1A', $elementText, $markup);
 
         return $markup;
     }

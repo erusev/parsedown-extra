@@ -79,10 +79,8 @@ EOF;
 
     public function testOneLineMultipleHtmlMarkup()
     {
-        // Note: Currently, semantically html is respected, not the empty nodes.
         $input = '<div>First paragraph.</div><p>Second paragraph.</p>';
-        $expectedMarkup = '<div>First paragraph.</div>
-<p>Second paragraph.</p>';
+        $expectedMarkup = '<div>First paragraph.</div><p>Second paragraph.</p>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
@@ -90,7 +88,6 @@ EOF;
 
     public function testOneMultilineOneHtmlMarkup()
     {
-        // Note: Currently, semantically html is respected, not the empty nodes.
         $input = '<p>Third
 paragraph
 
@@ -106,14 +103,11 @@ multiline</p>';
 
     public function testOneMultilineMultipleHtmlMarkup()
     {
-        // Note: Currently, semantically html is respected, not the empty nodes.
         $input = '<div>First paragraph.</div><p>Second paragraph.</p><p>Third
 paragraph
 
 multiline</p>';
-        $expectedMarkup = '<div>First paragraph.</div>
-<p>Second paragraph.</p>
-<p>Third
+        $expectedMarkup = '<div>First paragraph.</div><p>Second paragraph.</p><p>Third
 paragraph
 
 multiline</p>';
@@ -139,15 +133,13 @@ EOF;
 
     public function testMultipleHtmlMarkupInline()
     {
-        // Note: Currently, semantically html is respected, not the empty nodes.
         // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-80815953
         $input = <<<EOF
 <div>1</div><p>2</p>
 The p tag (and contents), along with this line are eaten.
 EOF;
         $expectedMarkup = <<<EOF
-<div>1</div>
-<p>2</p>
+<div>1</div><p>2</p>
 <p>The p tag (and contents), along with this line are eaten.</p>
 EOF;
         $actualMarkup = (new ParsedownExtra())->text($input);
@@ -166,12 +158,9 @@ EOF;
 
     public function testStripping()
     {
-        // Note: Currently, semantically html is respected, not the empty nodes.
         // @url https://github.com/erusev/parsedown-extra/issues/44#issuecomment-159655861
         $input = '<p><strong>Contact Method:</strong> email</p><p>Test</p><p><em>Some italic text.</em></p>';
-        $expectedMarkup = '<p><strong>Contact Method:</strong> email</p>
-<p>Test</p>
-<p><em>Some italic text.</em></p>';
+        $expectedMarkup = '<p><strong>Contact Method:</strong> email</p><p>Test</p><p><em>Some italic text.</em></p>';
         $actualMarkup = (new ParsedownExtra())->text($input);
 
         $this->assertEquals($expectedMarkup, $actualMarkup);
