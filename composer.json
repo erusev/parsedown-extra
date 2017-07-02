@@ -10,10 +10,85 @@
             "name": "Emanuil Rusev",
             "email": "hello@erusev.com",
             "homepage": "http://erusev.com"
+        },
+        {
+            "name": "Andy Miller",
+            "email": "rhuk@mac.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "David Newton",
+            "email": "david@davidnewton.ca",
+            "role": "Contributor"
+        },
+        {
+            "name": "Robin Adrianse",
+            "email": "robinadr@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "AcMitch",
+            "email": "adam.cameron.mitchell@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Guilherme Capilé",
+            "email": "capile@tecnodz.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Thijs van Dijk",
+            "email": "github@inurbanus.nl",
+            "role": "Contributor"
+        },
+        {
+            "name": "Mirela Lisboa",
+            "email": "mirlisboa@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Trevor Lemon",
+            "email": "duhlemman@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Daniel Rudolf",
+            "email": "github.com@daniel-rudolf.de",
+            "role": "Contributor"
+        },
+        {
+            "name": "Kael Shipman",
+            "email": "kael.shipman@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Rubén Rubio",
+            "email": "rrubio@perception.es",
+            "role": "Contributor"
+        },
+        {
+            "name": "Jason Robert O'Kennedy",
+            "email": "CelticParser@users.noreply.github.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Alexey Lutovinin",
+            "email": "crossrw1@gmail.com",
+            "role": "Contributor"
+        },
+        {
+            "name": "Aidan Woods",
+            "email": "aidantwoods@gmail.com>",
+            "role": "Contributor"
+        },
+        {
+            "name": "Daniel Berthereau",
+            "email": "Daniel.github@Berthereau.net",
+            "role": "Contributor"
         }
     ],
     "require": {
-        "php": ">=5.3.6",
+        "php": ">=5.4.0",
         "ext-dom": "*",
         "erusev/parsedown": "^1.6"
     },

@@ -17,13 +17,13 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.7.0';
+    const version = '0.8.0';
 
     # ~
 
     function __construct()
     {
-        if (version_compare(parent::version, '1.5.0') < 0)
+        if (version_compare(parent::version, '1.6.0') < 0)
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }

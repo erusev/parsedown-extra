@@ -14,10 +14,11 @@ Include both `Parsedown.php` and `ParsedownExtra.php` or install [the composer p
 
 ### Example
 
-``` php
+```php
 $Extra = new ParsedownExtra();
 
-echo $Extra->text('# Header {.sth}'); # prints: <h1 class="sth">Header</h1>
+// prints: <h1 id="my-id" data-header="my-data" class="my-class-a my-class-b">Header</h1>
+echo $Extra->text('# Header { .my-class-a .my-class-b #my-id data-header=my-data }');
 ```
 
 ### Questions
@@ -28,4 +29,4 @@ echo $Extra->text('# Header {.sth}'); # prints: <h1 class="sth">Header</h1>
 
 **How can I help?**
 
-Use it, star it, share it and in case you feel generous, [donate some money](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=528P3NZQMP8N2).
+Use it, star it, share it, improve it and in case you feel generous, [donate some money](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=528P3NZQMP8N2).
