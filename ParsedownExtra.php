@@ -278,13 +278,12 @@ class ParsedownExtra extends Parsedown
             return;
         }
 
-        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/(.*?)[ #]*{(' . $this->regexAttribute . '+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
-            $attributeString = $matches[1][0];
-
+            $attributeString = $matches[2][0];
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['text'] = self::substr($Block['element']['text'], 0, $matches[0][1]);
+            $Block['element']['text'] = $matches[1][0];
         }
 
         return $Block;
@@ -310,13 +309,12 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockSetextHeader($Line, $Block);
 
-        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/(.*?)[ ]*{(' . $this->regexAttribute . '+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
-            $attributeString = $matches[1][0];
-
+            $attributeString = $matches[2][0];
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['text'] = self::substr($Block['element']['text'], 0, $matches[0][1]);
+            $Block['element']['text'] = $matches[1][0];
         }
 
         return $Block;
