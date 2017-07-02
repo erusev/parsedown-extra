@@ -1516,7 +1516,9 @@ class ParsedownExtra extends Parsedown
             else {
                 $markupType = 'html end';
                 $whitePartial = self::strtolower(self::str_replace($replaceFrom, $replaceTo, $partialElementMarkup));
-                $pos = self::strpos($whitePartial, $whiteHtml);
+                $pos = $whiteHtml
+                    ? self::strpos($whitePartial, $whiteHtml)
+                    : false;
                 // This is a single partial tag ("</div>") or the partial tag is
                 // after something else, like "<div>zzzz</div></div>".
                 if (empty($pos)) {
