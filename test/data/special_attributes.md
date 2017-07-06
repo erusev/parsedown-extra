@@ -10,3 +10,8 @@ Header 1 {#header1}
 [link](http://parsedown.org) {.primary #link .upper-case}
 
 ![logo](/md.png) {#logo .big}
+
+```python {.truncated-for-brevity}
+import skynet
+# Watch the world burn.
+```
