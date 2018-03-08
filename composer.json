@@ -16,7 +16,7 @@
         "php": ">=5.3.6",
         "ext-dom": "*",
         "ext-mbstring": "*",
-        "erusev/parsedown": "^1.6"
+        "erusev/parsedown": "^1.7"
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
