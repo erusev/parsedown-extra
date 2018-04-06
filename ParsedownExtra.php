@@ -414,6 +414,33 @@ class ParsedownExtra extends Parsedown
     # ~
     #
 
+    private $currentAbreviation;
+    private $currentMeaning;
+
+    protected function insertAbreviation(array $Element)
+    {
+        if (isset($Element['text']))
+        {
+            $Element['elements'] = self::pregReplaceElements(
+                '/\b'.preg_quote($this->currentAbreviation, '/').'\b/',
+                array(
+                    array(
+                        'name' => 'abbr',
+                        'attributes' => array(
+                            'title' => $this->currentMeaning,
+                        ),
+                        'text' => $this->currentAbreviation,
+                    )
+                ),
+                $Element['text']
+            );
+
+            unset($Element['text']);
+        }
+
+        return $Element;
+    }
+
     protected function inlineText($text)
     {
         $Inline = parent::inlineText($text);
@@ -422,28 +449,11 @@ class ParsedownExtra extends Parsedown
         {
             foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $meaning)
             {
-                $Inline['element'] = $this->elementApplyRecursive(
-                    function (array $Element) use ($abbreviation, $meaning) {
-                        if (isset($Element['text']))
-                        {
-                            $Element['elements'] = self::pregReplaceElements(
-                                '/\b'.preg_quote($abbreviation, '/').'\b/',
-                                array(
-                                    array(
-                                        'name' => 'abbr',
-                                        'attributes' => array(
-                                            'title' => $meaning,
-                                        ),
-                                        'text' => $abbreviation
-                                    )
-                                ),
-                                $Element['text']
-                            );
-                            unset($Element['text']);
-                        }
+                $this->currentAbreviation = $abbreviation;
+                $this->currentMeaning = $meaning;
 
-                        return $Element;
-                    },
+                $Inline['element'] = $this->elementApplyRecursive(
+                    array($this, 'insertAbreviation'),
                     $Inline['element']
                 );
             }
