@@ -527,6 +527,7 @@ class ParsedownExtra extends Parsedown
 
             foreach ($numbers as $number)
             {
+                $backLinkElements[] = array('text' => ' ');
                 $backLinkElements[] = array(
                     'name' => 'a',
                     'attributes' => array(
@@ -539,6 +540,8 @@ class ParsedownExtra extends Parsedown
                     'autobreak' => false,
                 );
             }
+
+            unset($backLinkElements[0]);
 
             $n = count($textElements) -1;
 
