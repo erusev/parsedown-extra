@@ -17,7 +17,7 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.8.0';
+    const version = '0.8.0-beta-1';
 
     # ~
 
@@ -145,7 +145,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionList($Line, $Block)
     {
-        if ( ! isset($Block) or isset($Block['type']))
+        if ( ! isset($Block) or $Block['type'] !== 'Paragraph')
         {
             return;
         }
@@ -452,7 +452,7 @@ class ParsedownExtra extends Parsedown
                 $this->currentAbreviation = $abbreviation;
                 $this->currentMeaning = $meaning;
 
-                $Inline['element'] = $this->elementApplyRecursive(
+                $Inline['element'] = $this->elementApplyRecursiveDepthFirst(
                     array($this, 'insertAbreviation'),
                     $Inline['element']
                 );

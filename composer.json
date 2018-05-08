@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "erusev/parsedown": "^1.8.0|dev-master",
+        "erusev/parsedown": "^1.8.0|^1.8.0-beta-4",
         "php": ">=5.3.6",
         "ext-dom": "*",
         "ext-mbstring": "*"
