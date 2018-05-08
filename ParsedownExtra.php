@@ -452,7 +452,7 @@ class ParsedownExtra extends Parsedown
                 $this->currentAbreviation = $abbreviation;
                 $this->currentMeaning = $meaning;
 
-                $Inline['element'] = $this->elementApplyRecursive(
+                $Inline['element'] = $this->elementApplyRecursiveDepthFirst(
                     array($this, 'insertAbreviation'),
                     $Inline['element']
                 );
