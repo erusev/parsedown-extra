@@ -26,4 +26,4 @@ install:
 script:
   - vendor/bin/phpunit
   - vendor/bin/phpunit vendor/erusev/parsedown/test/CommonMarkTestWeak.php || true
-  - '[ -z "$TRAVIS_TAG" ] || [ "$TRAVIS_TAG" == "$(php -r "require(\"ParsedownExtra.php\"); echo ParsedownExtra::version;")" ]'
+  - '[ -z "$TRAVIS_TAG" ] || [ "$TRAVIS_TAG" == "$(php -r "require(\"vendor/autoload.php\"); echo ParsedownExtra::version;")" ]'
