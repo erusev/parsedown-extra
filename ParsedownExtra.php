@@ -145,7 +145,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionList($Line, $Block)
     {
-        if ( ! isset($Block) or isset($Block['type']))
+        if ( ! isset($Block) or $Block['type'] !== 'Paragraph')
         {
             return;
         }
