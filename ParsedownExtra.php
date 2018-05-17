@@ -398,6 +398,9 @@ class ParsedownExtra extends Parsedown
     {
         $Link = parent::inlineLink($Excerpt);
 
+        // may return null, so abort if it does
+        if (!$Link) return $Link;
+
         $remainder = substr($Excerpt['text'], $Link['extent']);
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
@@ -593,17 +596,26 @@ class ParsedownExtra extends Parsedown
     {
         $Data = array();
 
-        $attributes = preg_split('/[ ]+/', $attributeString, - 1, PREG_SPLIT_NO_EMPTY);
+        $attributes = preg_split('/\s+/', $attributeString, null, PREG_SPLIT_NO_EMPTY);
 
         foreach ($attributes as $attribute)
         {
+            // If it's an id...
             if ($attribute[0] === '#')
             {
                 $Data['id'] = substr($attribute, 1);
             }
-            else # "."
+
+            // Else if it's a class
+            elseif ($attribute[0] == ".")
             {
                 $classes []= substr($attribute, 1);
+            }
+
+            // Else it must be an attribute
+            else {
+                $attr = explode('=', $attribute);
+                $Data[array_shift($attr)] = implode('=', $attr);
             }
         }
 
@@ -682,5 +694,16 @@ class ParsedownExtra extends Parsedown
     # Fields
     #
 
-    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
+    /**
+     * Regex for finding attribute strings inside curly braces (e.g., {lang=en .nav-link}
+     *
+     * Explained:
+     *
+     *  * Attribute may start with any alpha-numeric character, optionally preceded by `#` or `.`
+     *  * Attribute may optionally contain `=`, `-`, or any other "word" character (`[a-zA-Z0-9_]`)
+     *  * Attribute may optionally be followed by a space and then another attribute
+     *
+     */
+    protected $regexAttribute = '(?:[#.]?[A-Za-z0-9][\w=-]* ?)';
 }
+
