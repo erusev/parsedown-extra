@@ -3,10 +3,7 @@
 #
 #
 # Parsedown Extra
-# https://github.com/erusev/parsedown-extra
-#
-# (c) Emanuil Rusev
-# http://erusev.com
+# https://github.com/condenast-spain/parsedown-extra
 #
 # For the full license information, view the LICENSE file that was distributed
 # with this source code.
@@ -23,7 +20,7 @@ class ParsedownExtra extends Parsedown
 
     function __construct()
     {
-        if (parent::version < '1.5.0')
+        if (parent::version < '1.7.2')
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
