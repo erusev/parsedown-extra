@@ -1,19 +1,18 @@
 {
-    "name": "erusev/parsedown-extra",
+    "name": "condenast-spain/parsedown-extra",
     "description": "An extension of Parsedown that adds support for Markdown Extra.",
     "keywords": ["markdown", "markdown extra", "parser", "parsedown"],
-    "homepage": "https://github.com/erusev/parsedown-extra",
+    "homepage": "https://github.com/condenast-spain/parsedown-extra",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Emanuil Rusev",
-            "email": "hello@erusev.com",
-            "homepage": "http://erusev.com"
+            "name": "CondeNast Spain",
+            "homepage": "http://www.cnworld.es/"
         }
     ],
     "require": {
-        "erusev/parsedown": "^1.8.0|^1.8.0-beta-4",
+        "condenast-spain/parsedown": "^1.7.2",
         "php": ">=5.3.6",
         "ext-dom": "*",
         "ext-mbstring": "*"
@@ -28,9 +27,9 @@
         "psr-0": {
             "TestParsedown": "test/",
             "ParsedownExtraTest": "test/",
-            "ParsedownTest": "vendor/erusev/parsedown/test/",
-            "CommonMarkTest": "vendor/erusev/parsedown/test/",
-            "CommonMarkTestWeak": "vendor/erusev/parsedown/test/"
+            "ParsedownTest": "vendor/condenast-spain/parsedown/test/",
+            "CommonMarkTest": "vendor/condenast-spain/parsedown/test/",
+            "CommonMarkTestWeak": "vendor/condenast-spain/parsedown/test/"
         }
     }
 }

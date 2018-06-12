@@ -17,13 +17,13 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.8.0-beta-1';
+    const version = '0.7.0';
 
     # ~
 
     function __construct()
     {
-        if (version_compare(parent::version, '1.7.1') < 0)
+        if (parent::version < '1.5.0')
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
@@ -43,13 +43,7 @@ class ParsedownExtra extends Parsedown
 
     function text($text)
     {
-        $Elements = $this->textElements($text);
-
-        # convert to markup
-        $markup = $this->elements($Elements);
-
-        # trim line breaks
-        $markup = trim($markup, "\n");
+        $markup = parent::text($text);
 
         # merge consecutive dl elements
 
@@ -145,27 +139,25 @@ class ParsedownExtra extends Parsedown
 
     protected function blockDefinitionList($Line, $Block)
     {
-        if ( ! isset($Block) or $Block['type'] !== 'Paragraph')
+        if ( ! isset($Block) or isset($Block['type']))
         {
             return;
         }
 
         $Element = array(
             'name' => 'dl',
-            'elements' => array(),
+            'handler' => 'elements',
+            'text' => array(),
         );
 
-        $terms = explode("\n", $Block['element']['handler']['argument']);
+        $terms = explode("\n", $Block['element']['text']);
 
         foreach ($terms as $term)
         {
-            $Element['elements'] []= array(
+            $Element['text'] []= array(
                 'name' => 'dt',
-                'handler' => array(
-                    'function' => 'lineElements',
-                    'argument' => $term,
-                    'destination' => 'elements'
-                ),
+                'handler' => 'line',
+                'text' => $term,
             );
         }
 
@@ -193,17 +185,15 @@ class ParsedownExtra extends Parsedown
 
             if (isset($Block['interrupted']))
             {
-                $Block['dd']['handler']['function'] = 'textElements';
-                $Block['dd']['handler']['argument'] .= "\n\n";
-
-                $Block['dd']['handler']['destination'] = 'elements';
+                $Block['dd']['handler'] = 'text';
+                $Block['dd']['text'] .= "\n\n";
 
                 unset($Block['interrupted']);
             }
 
             $text = substr($Line['body'], min($Line['indent'], 4));
 
-            $Block['dd']['handler']['argument'] .= "\n" . $text;
+            $Block['dd']['text'] .= "\n" . $text;
 
             return $Block;
         }
@@ -216,13 +206,13 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockHeader($Line);
 
-        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['handler']['argument'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
 
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['handler']['argument'] = substr($Block['element']['handler']['argument'], 0, $matches[0][1]);
+            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
 
         return $Block;
@@ -231,98 +221,11 @@ class ParsedownExtra extends Parsedown
     #
     # Markup
 
-    protected function blockMarkup($Line)
-    {
-        if ($this->markupEscaped or $this->safeMode)
-        {
-            return;
-        }
-
-        if (preg_match('/^<(\w[\w-]*)(?:[ ]*'.$this->regexHtmlAttribute.')*[ ]*(\/)?>/', $Line['text'], $matches))
-        {
-            $element = strtolower($matches[1]);
-
-            if (in_array($element, $this->textLevelElements))
-            {
-                return;
-            }
-
-            $Block = array(
-                'name' => $matches[1],
-                'depth' => 0,
-                'element' => array(
-                    'rawHtml' => $Line['text'],
-                    'autobreak' => true,
-                ),
-            );
-
-            $length = strlen($matches[0]);
-            $remainder = substr($Line['text'], $length);
-
-            if (trim($remainder) === '')
-            {
-                if (isset($matches[2]) or in_array($matches[1], $this->voidElements))
-                {
-                    $Block['closed'] = true;
-                    $Block['void'] = true;
-                }
-            }
-            else
-            {
-                if (isset($matches[2]) or in_array($matches[1], $this->voidElements))
-                {
-                    return;
-                }
-                if (preg_match('/<\/'.$matches[1].'>[ ]*$/i', $remainder))
-                {
-                    $Block['closed'] = true;
-                }
-            }
-
-            return $Block;
-        }
-    }
-
-    protected function blockMarkupContinue($Line, array $Block)
-    {
-        if (isset($Block['closed']))
-        {
-            return;
-        }
-
-        if (preg_match('/^<'.$Block['name'].'(?:[ ]*'.$this->regexHtmlAttribute.')*[ ]*>/i', $Line['text'])) # open
-        {
-            $Block['depth'] ++;
-        }
-
-        if (preg_match('/(.*?)<\/'.$Block['name'].'>[ ]*$/i', $Line['text'], $matches)) # close
-        {
-            if ($Block['depth'] > 0)
-            {
-                $Block['depth'] --;
-            }
-            else
-            {
-                $Block['closed'] = true;
-            }
-        }
-
-        if (isset($Block['interrupted']))
-        {
-            $Block['element']['rawHtml'] .= "\n";
-            unset($Block['interrupted']);
-        }
-
-        $Block['element']['rawHtml'] .= "\n".$Line['body'];
-
-        return $Block;
-    }
-
     protected function blockMarkupComplete($Block)
     {
         if ( ! isset($Block['void']))
         {
-            $Block['element']['rawHtml'] = $this->processTag($Block['element']['rawHtml']);
+            $Block['markup'] = $this->processTag($Block['markup']);
         }
 
         return $Block;
@@ -335,13 +238,13 @@ class ParsedownExtra extends Parsedown
     {
         $Block = parent::blockSetextHeader($Line, $Block);
 
-        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['handler']['argument'], $matches, PREG_OFFSET_CAPTURE))
+        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
 
             $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
 
-            $Block['element']['handler']['argument'] = substr($Block['element']['handler']['argument'], 0, $matches[0][1]);
+            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
         }
 
         return $Block;
@@ -375,7 +278,8 @@ class ParsedownExtra extends Parsedown
             $Element = array(
                 'name' => 'sup',
                 'attributes' => array('id' => 'fnref'.$this->DefinitionData['Footnote'][$name]['count'].':'.$name),
-                'element' => array(
+                'handler' => 'element',
+                'text' => array(
                     'name' => 'a',
                     'attributes' => array('href' => '#fn:'.$name, 'class' => 'footnote-ref'),
                     'text' => $this->DefinitionData['Footnote'][$name]['number'],
@@ -390,6 +294,25 @@ class ParsedownExtra extends Parsedown
     }
 
     private $footnoteCount = 0;
+
+    #
+    # Span
+
+    protected function inlineSpan($Excerpt)
+    {
+        $Span = parent::inlineSpan($Excerpt);
+
+        $remainder = substr($Excerpt['text'], $Span['extent']);
+
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
+        {
+            $Span['element']['attributes'] += $this->parseAttributeData($matches[1]);
+
+            $Span['extent'] += strlen($matches[0]);
+        }
+
+        return $Span;
+    }
 
     #
     # Link
@@ -414,52 +337,21 @@ class ParsedownExtra extends Parsedown
     # ~
     #
 
-    private $currentAbreviation;
-    private $currentMeaning;
-
-    protected function insertAbreviation(array $Element)
+    protected function unmarkedText($text)
     {
-        if (isset($Element['text']))
-        {
-            $Element['elements'] = self::pregReplaceElements(
-                '/\b'.preg_quote($this->currentAbreviation, '/').'\b/',
-                array(
-                    array(
-                        'name' => 'abbr',
-                        'attributes' => array(
-                            'title' => $this->currentMeaning,
-                        ),
-                        'text' => $this->currentAbreviation,
-                    )
-                ),
-                $Element['text']
-            );
-
-            unset($Element['text']);
-        }
-
-        return $Element;
-    }
-
-    protected function inlineText($text)
-    {
-        $Inline = parent::inlineText($text);
+        $text = parent::unmarkedText($text);
 
         if (isset($this->DefinitionData['Abbreviation']))
         {
             foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $meaning)
             {
-                $this->currentAbreviation = $abbreviation;
-                $this->currentMeaning = $meaning;
+                $pattern = '/\b'.preg_quote($abbreviation, '/').'\b/';
 
-                $Inline['element'] = $this->elementApplyRecursiveDepthFirst(
-                    array($this, 'insertAbreviation'),
-                    $Inline['element']
-                );
+                $text = preg_replace($pattern, '<abbr title="'.$meaning.'">'.$abbreviation.'</abbr>', $text);
             }
         }
 
-        return $Inline;
+        return $text;
     }
 
     #
@@ -475,21 +367,18 @@ class ParsedownExtra extends Parsedown
 
         $Block['dd'] = array(
             'name' => 'dd',
-            'handler' => array(
-                'function' => 'lineElements',
-                'argument' => $text,
-                'destination' => 'elements'
-            ),
+            'handler' => 'line',
+            'text' => $text,
         );
 
         if (isset($Block['interrupted']))
         {
-            $Block['dd']['handler']['function'] = 'textElements';
+            $Block['dd']['handler'] = 'text';
 
             unset($Block['interrupted']);
         }
 
-        $Block['element']['elements'] []= & $Block['dd'];
+        $Block['element']['text'] []= & $Block['dd'];
 
         return $Block;
     }
@@ -499,11 +388,15 @@ class ParsedownExtra extends Parsedown
         $Element = array(
             'name' => 'div',
             'attributes' => array('class' => 'footnotes'),
-            'elements' => array(
-                array('name' => 'hr'),
+            'handler' => 'elements',
+            'text' => array(
+                array(
+                    'name' => 'hr',
+                ),
                 array(
                     'name' => 'ol',
-                    'elements' => array(),
+                    'handler' => 'elements',
+                    'text' => array(),
                 ),
             ),
         );
@@ -519,68 +412,34 @@ class ParsedownExtra extends Parsedown
 
             $text = $DefinitionData['text'];
 
-            $textElements = parent::textElements($text);
+            $text = parent::text($text);
 
             $numbers = range(1, $DefinitionData['count']);
 
-            $backLinkElements = array();
+            $backLinksMarkup = '';
 
             foreach ($numbers as $number)
             {
-                $backLinkElements[] = array('text' => ' ');
-                $backLinkElements[] = array(
-                    'name' => 'a',
-                    'attributes' => array(
-                        'href' => "#fnref$number:$definitionId",
-                        'rev' => 'footnote',
-                        'class' => 'footnote-backref',
-                    ),
-                    'rawHtml' => '&#8617;',
-                    'allowRawHtmlInSafeMode' => true,
-                    'autobreak' => false,
-                );
+                $backLinksMarkup .= ' <a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
             }
 
-            unset($backLinkElements[0]);
+            $backLinksMarkup = substr($backLinksMarkup, 1);
 
-            $n = count($textElements) -1;
-
-            if ($textElements[$n]['name'] === 'p')
+            if (substr($text, - 4) === '</p>')
             {
-                $backLinkElements = array_merge(
-                    array(
-                        array(
-                            'rawHtml' => '&#160;',
-                            'allowRawHtmlInSafeMode' => true,
-                        ),
-                    ),
-                    $backLinkElements
-                );
+                $backLinksMarkup = '&#160;'.$backLinksMarkup;
 
-                unset($textElements[$n]['name']);
-
-                $textElements[$n] = array(
-                    'name' => 'p',
-                    'elements' => array_merge(
-                        array($textElements[$n]),
-                        $backLinkElements
-                    ),
-                );
+                $text = substr_replace($text, $backLinksMarkup.'</p>', - 4);
             }
             else
             {
-                $textElements[] = array(
-                    'name' => 'p',
-                    'elements' => $backLinkElements
-                );
+                $text .= "\n".'<p>'.$backLinksMarkup.'</p>';
             }
 
-            $Element['elements'][1]['elements'] []= array(
+            $Element['text'][1]['text'] []= array(
                 'name' => 'li',
                 'attributes' => array('id' => 'fn:'.$definitionId),
-                'elements' => array_merge(
-                    $textElements
-                ),
+                'text' => "\n".$text."\n",
             );
         }
 
