@@ -457,6 +457,18 @@ class ParsedownExtra extends Parsedown
             {
                 $Data['id'] = substr($attribute, 1);
             }
+            elseif ($attribute[0] === ':')
+            {
+                $attribute = substr($attribute, 1);
+                $attribute = str_replace('\\', '', $attribute);
+                if (preg_match('/^([-\w]+)\=(?:(?:\"([-\w|=#:\"\'\\\;]+)\")+)/', $attribute, $matches))
+                {
+                    if (isset($matches[1]) && isset($matches[2]))
+                    {
+                        $Data[$matches[1]] = $matches[2];
+                    }
+                }
+            }
             else # "."
             {
                 $classes []= substr($attribute, 1);
@@ -538,5 +550,5 @@ class ParsedownExtra extends Parsedown
     # Fields
     #
 
-    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
+    protected $regexAttribute = '(?:[#.:][-\w|=#:\"\'\\\;]+[ ]*)';
 }
