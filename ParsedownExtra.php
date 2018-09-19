@@ -14,13 +14,13 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.7.3';
+    const version = '0.7.4';
 
     # ~
 
     function __construct()
     {
-        if (parent::version < '1.7.2')
+        if (parent::version < '1.7.3')
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
@@ -56,6 +56,31 @@ class ParsedownExtra extends Parsedown
         }
 
         return $markup;
+    }
+
+    #
+    # Lines
+
+    protected function paragraph($Line)
+    {
+        $Block = parent::paragraph($Line);
+
+        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
+        {
+            $span = null;
+            $attributeString = $matches[1][0];
+            $textWithoutFinalClass = substr($Block['element']['text'], 0, $matches[0][1]);
+            if (preg_match('/%%(?=\S)(.+?)(?<=\S)%%/', $Block['element']['text'], $matchesNew)) {
+                $span = $matchesNew[0];
+            }
+
+            if (!$span || ($span && substr($textWithoutFinalClass, -1) != '%')) {
+                $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
+                $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            }
+        }
+
+        return $Block;
     }
 
     #
@@ -205,11 +230,17 @@ class ParsedownExtra extends Parsedown
 
         if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
+            $span = null;
             $attributeString = $matches[1][0];
+            $textWithoutFinalClass = substr($Block['element']['text'], 0, $matches[0][1]);
+            if (preg_match('/%%(?=\S)(.+?)(?<=\S)%%/', $Block['element']['text'], $matchesNew)) {
+                $span = $matchesNew[0];
+            }
 
-            $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
-
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            if (!$span || ($span && substr($textWithoutFinalClass, -1) != '%')) {
+                $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
+                $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
+            }
         }
 
         return $Block;
@@ -310,6 +341,47 @@ class ParsedownExtra extends Parsedown
 
         return $Span;
     }
+
+
+    #
+    # Emphasis
+
+    protected function inlineEmphasis($Excerpt)
+    {
+        $Emphasis = parent::inlineEmphasis($Excerpt);
+
+        $remainder = substr($Excerpt['text'], $Emphasis['extent']);
+
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
+        {
+            $Emphasis['element']['attributes'] += $this->parseAttributeData($matches[1]);
+
+            $Emphasis['extent'] += strlen($matches[0]);
+        }
+
+        return $Emphasis;
+    }
+
+
+    #
+    # Strikethrough
+
+    protected function inlineStrikethrough($Excerpt)
+    {
+        $Strikethrough = parent::inlineStrikethrough($Excerpt);
+
+        $remainder = substr($Excerpt['text'], $Strikethrough['extent']);
+
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
+        {
+            $Strikethrough['element']['attributes'] += $this->parseAttributeData($matches[1]);
+
+            $Strikethrough['extent'] += strlen($matches[0]);
+        }
+
+        return $Strikethrough;
+    }
+
 
     #
     # Link
