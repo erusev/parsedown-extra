@@ -14,7 +14,7 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.7.4';
+    const version = '0.7.5';
 
     # ~
 
@@ -394,11 +394,21 @@ class ParsedownExtra extends Parsedown
 
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
-            $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
+            // multi attributes
+            foreach (explode(':', $matches[1]) as $property) {
+                if (!empty($property)) {
+                    $Link['element']['attributes'] += $this->parseAttributeData(sprintf(':%s', $property));
 
-            $Link['extent'] += strlen($matches[0]);
+                    $Link['extent'] += strlen($matches[0]);
+                }
+            }
         }
-
+/*
+        //  Add rel-nofollow to all externals links
+        if( preg_match('/http(s?)\:\/\//i', $Link['element']['attributes']['href']) ) {
+            $Link['element']['attributes']['rel'] = 'nofollow';
+        }
+*/
         return $Link;
     }
 
