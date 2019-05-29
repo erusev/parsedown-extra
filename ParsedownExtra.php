@@ -18,7 +18,9 @@ class ParsedownExtra extends Parsedown
 
     # ~
 
-    function __construct()
+    private $followWhiteList;
+
+    function __construct($followWhiteList = null)
     {
         if (parent::version < '1.7.3')
         {
@@ -27,6 +29,8 @@ class ParsedownExtra extends Parsedown
 
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
+
+        $this->followWhiteList = $followWhiteList;
 
         # identify footnote definitions before reference definitions
         array_unshift($this->BlockTypes['['], 'Footnote');
@@ -392,6 +396,8 @@ class ParsedownExtra extends Parsedown
 
         $remainder = substr($Excerpt['text'], $Link['extent']);
 
+        $relAttributeSetted = false;
+
         if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
         {
             // multi attributes
@@ -399,16 +405,30 @@ class ParsedownExtra extends Parsedown
                 if (!empty($property)) {
                     $Link['element']['attributes'] += $this->parseAttributeData(sprintf(':%s', $property));
 
+                    // check rel property is setted manualy
+                    $attributeName = explode('=', $property);
+                    if (isset($attributeName[0]) && trim($attributeName[0]) == 'rel') {
+                        $relAttributeSetted = true;
+                    }
+
                     $Link['extent'] += strlen($matches[0]);
                 }
             }
         }
-/*
-        //  Add rel-nofollow to all externals links
-        if( preg_match('/http(s?)\:\/\//i', $Link['element']['attributes']['href']) ) {
-            $Link['element']['attributes']['rel'] = 'nofollow';
+
+        if (
+            ! $this->followWhiteList ||
+            ($this->followWhiteList && array_search($this->getDomain($Link['element']['attributes']['href']), $this->followWhiteList) === false)
+        ) {
+            if ($relAttributeSetted == false) {
+                //  Add rel-nofollow to all externals links
+                if (preg_match('/http(s?)\:\/\//i', $Link['element']['attributes']['href'])) {
+                    $Link['element']['attributes'] += $this->parseAttributeData(sprintf(':%s', 'rel="nofollow"'));
+                }
+            }
         }
-*/
+
+
         return $Link;
     }
 
@@ -633,4 +653,17 @@ class ParsedownExtra extends Parsedown
     #
 
     protected $regexAttribute = '(?:[#.:][-\w|=#:\"\'\\\;]+[ ]*)';
+
+    #
+    # Utils
+    #
+    protected function getDomain($url)
+    {
+        $pieces = parse_url($url);
+        $domain = isset($pieces['host']) ? $pieces['host'] : '';
+        if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $domain, $regs)) {
+            return $regs['domain'];
+        }
+        return false;
+    }
 }
