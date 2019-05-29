@@ -1,6 +1,6 @@
 {
     "name": "condenast-spain/parsedown-extra",
-    "description": "An extension of Parsedown that adds support for Markdown Extra. ",
+    "description": "An extension of Parsedown that adds support for Markdown Extra.",
     "keywords": ["markdown", "markdown extra", "parser", "parsedown"],
     "homepage": "https://github.com/condenast-spain/parsedown-extra",
     "type": "library",
