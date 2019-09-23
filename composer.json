@@ -13,9 +13,24 @@
         }
     ],
     "require": {
-        "erusev/parsedown": "~1.4"
+        "erusev/parsedown": "^1.8.0|^1.8.0-beta-4",
+        "php": ">=5.3.6",
+        "ext-dom": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.8.35"
     },
     "autoload": {
         "psr-0": {"ParsedownExtra": ""}
+    },
+    "autoload-dev": {
+        "psr-0": {
+            "TestParsedown": "test/",
+            "ParsedownExtraTest": "test/",
+            "ParsedownTest": "vendor/erusev/parsedown/test/",
+            "CommonMarkTest": "vendor/erusev/parsedown/test/",
+            "CommonMarkTestWeak": "vendor/erusev/parsedown/test/"
+        }
     }
 }
