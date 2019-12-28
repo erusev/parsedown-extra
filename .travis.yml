@@ -22,7 +22,7 @@ matrix:
       dist: bionic
 
 install:
-  - composer install --prefer-source --no-interaction --no-progress
+  - composer install --prefer-dist --no-interaction --no-progress
 
 script:
   - vendor/bin/phpunit
