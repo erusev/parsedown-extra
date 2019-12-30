@@ -17,7 +17,7 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.8.1-dev';
+    const version = '0.8.1';
 
     # ~
 
