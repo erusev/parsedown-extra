@@ -23,7 +23,7 @@ class ParsedownExtra extends Parsedown
 
     function __construct()
     {
-        if (version_compare(parent::version, '1.5.0') >= 0)
+        if (version_compare(parent::version, '1.5.0') < 0)
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
