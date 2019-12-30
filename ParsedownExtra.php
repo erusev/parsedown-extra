@@ -23,7 +23,7 @@ class ParsedownExtra extends Parsedown
 
     function __construct()
     {
-        if (version_compare(parent::version, '1.5.0') < 0)
+        if (version_compare(parent::version, '1.7.4') < 0)
         {
             throw new Exception('ParsedownExtra requires a later version of Parsedown');
         }
@@ -432,7 +432,7 @@ class ParsedownExtra extends Parsedown
             $Element['text'][1]['text'] []= array(
                 'name' => 'li',
                 'attributes' => array('id' => 'fn:'.$definitionId),
-                'text' => "\n".$text."\n",
+                'rawHtml' => "\n".$text."\n",
             );
         }
 
