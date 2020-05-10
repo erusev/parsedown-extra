@@ -1,33 +1,11 @@
 <?php
 
-#
-#
-# Parsedown Extra
-# https://github.com/erusev/parsedown-extra
-#
-# (c) Emanuil Rusev
-# http://erusev.com
-#
-# For the full license information, view the LICENSE file that was distributed
-# with this source code.
-#
-#
+namespace Erusev\ParsedownExtra;
 
-class ParsedownExtra extends Parsedown
+final class ParsedownExtra
 {
-    # ~
-
-    const version = '0.8.1';
-
-    # ~
-
     function __construct()
     {
-        if (version_compare(parent::version, '1.7.4') < 0)
-        {
-            throw new Exception('ParsedownExtra requires a later version of Parsedown');
-        }
-
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
