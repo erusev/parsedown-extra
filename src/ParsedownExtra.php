@@ -92,71 +92,6 @@ final class ParsedownExtra
     }
 
     #
-    # Definition List
-
-    protected function blockDefinitionList($Line, $Block)
-    {
-        if ( ! isset($Block) or isset($Block['type']))
-        {
-            return;
-        }
-
-        $Element = array(
-            'name' => 'dl',
-            'handler' => 'elements',
-            'text' => array(),
-        );
-
-        $terms = explode("\n", $Block['element']['text']);
-
-        foreach ($terms as $term)
-        {
-            $Element['text'] []= array(
-                'name' => 'dt',
-                'handler' => 'line',
-                'text' => $term,
-            );
-        }
-
-        $Block['element'] = $Element;
-
-        $Block = $this->addDdElement($Line, $Block);
-
-        return $Block;
-    }
-
-    protected function blockDefinitionListContinue($Line, array $Block)
-    {
-        if ($Line['text'][0] === ':')
-        {
-            $Block = $this->addDdElement($Line, $Block);
-
-            return $Block;
-        }
-        else
-        {
-            if (isset($Block['interrupted']) and $Line['indent'] === 0)
-            {
-                return;
-            }
-
-            if (isset($Block['interrupted']))
-            {
-                $Block['dd']['handler'] = 'text';
-                $Block['dd']['text'] .= "\n\n";
-
-                unset($Block['interrupted']);
-            }
-
-            $text = substr($Line['body'], min($Line['indent'], 4));
-
-            $Block['dd']['text'] .= "\n" . $text;
-
-            return $Block;
-        }
-    }
-
-    #
     # Header
 
     protected function blockHeader($Line)
@@ -302,35 +237,6 @@ final class ParsedownExtra
         }
 
         return $text;
-    }
-
-    #
-    # Util Methods
-    #
-
-    protected function addDdElement(array $Line, array $Block)
-    {
-        $text = substr($Line['text'], 1);
-        $text = trim($text);
-
-        unset($Block['dd']);
-
-        $Block['dd'] = array(
-            'name' => 'dd',
-            'handler' => 'line',
-            'text' => $text,
-        );
-
-        if (isset($Block['interrupted']))
-        {
-            $Block['dd']['handler'] = 'text';
-
-            unset($Block['interrupted']);
-        }
-
-        $Block['element']['text'] []= & $Block['dd'];
-
-        return $Block;
     }
 
     protected function buildFootnoteElement()
