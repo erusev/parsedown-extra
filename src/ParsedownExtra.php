@@ -40,27 +40,6 @@ final class ParsedownExtra
     }
 
     #
-    # Blocks
-    #
-
-    #
-    # Abbreviation
-
-    protected function blockAbbreviation($Line)
-    {
-        if (preg_match('/^\*\[(.+?)\]:[ ]*(.+?)[ ]*$/', $Line['text'], $matches))
-        {
-            $this->DefinitionData['Abbreviation'][$matches[1]] = $matches[2];
-
-            $Block = array(
-                'hidden' => true,
-            );
-
-            return $Block;
-        }
-    }
-
-    #
     # Footnote
 
     protected function blockFootnote($Line)
