@@ -348,6 +348,21 @@ class ParsedownExtra extends Parsedown
     }
 
     #
+    # Table attributes
+    #
+
+    protected function blockTableContinue($Line, array $Block)
+    {
+        if (preg_match('/^{('.$this->regexAttribute.'+)}/', $Line["text"], $matches))
+        {
+            $Block['element']['attributes'] = $this->parseAttributeData($matches[1]);
+        } else {
+            $Block = parent::blockTableContinue($Line, $Block);
+        }
+        return $Block;
+    }
+
+    #
     # Util Methods
     #
 
