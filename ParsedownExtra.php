@@ -353,7 +353,7 @@ class ParsedownExtra extends Parsedown
 
     protected function blockTableContinue($Line, array $Block)
     {
-        if (preg_match('/^{('.$this->regexAttribute.'+)}/', $Line["text"], $matches))
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $Line["text"], $matches))
         {
             $Block['element']['attributes'] = $this->parseAttributeData($matches[1]);
         } else {
