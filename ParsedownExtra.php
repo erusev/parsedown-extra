@@ -210,6 +210,10 @@ class ParsedownExtra extends Parsedown
             return null;
         }
 
+        if ( ! isset ($Block['element']['text'])) {
+            $Block['element']['text'] = '';
+        }
+        
         if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
         {
             $attributeString = $matches[1][0];
