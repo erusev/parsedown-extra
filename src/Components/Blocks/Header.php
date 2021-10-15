@@ -3,7 +3,6 @@
 namespace Erusev\ParsedownExtra\Components\Blocks;
 
 use Erusev\Parsedown\AST\Handler;
-use Erusev\Parsedown\AST\StateRenderable;
 use Erusev\Parsedown\Components\Block;
 use Erusev\Parsedown\Components\Blocks\Header as BaseHeader;
 use Erusev\Parsedown\Configurables\HeaderSlug;

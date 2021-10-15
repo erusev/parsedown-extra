@@ -3,7 +3,6 @@
 namespace Erusev\ParsedownExtra\Components\Inlines;
 
 use Erusev\Parsedown\AST\Handler;
-use Erusev\Parsedown\AST\StateRenderable;
 use Erusev\Parsedown\Components\Inline;
 use Erusev\Parsedown\Components\Inlines\Link as BaseLink;
 use Erusev\Parsedown\Components\Inlines\Url;
