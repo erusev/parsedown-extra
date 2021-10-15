@@ -1,5 +1,11 @@
 <?php
 
+namespace Erusev\ParsedownExtra\Tests;
+
+use Erusev\Parsedown\StateBearer;
+use Erusev\Parsedown\Tests\ParsedownTest;
+use Erusev\ParsedownExtra\ParsedownExtra;
+
 class ParsedownExtraTest extends ParsedownTest
 {
     protected function initDirs()
@@ -7,5 +13,10 @@ class ParsedownExtraTest extends ParsedownTest
         $dirs = parent::initDirs();
         $dirs[] = __DIR__ . '/data/';
         return $dirs;
+    }
+
+    protected function initState(string $testName): StateBearer
+    {
+        return new ParsedownExtra(parent::initState($testName));
     }
 }
