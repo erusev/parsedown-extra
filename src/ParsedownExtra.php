@@ -124,11 +124,12 @@ final class ParsedownExtra implements StateBearer
                    Element::selfClosing('hr', []),
                    new Element('ol', [], \array_map(
                        function (Footnote $F) use ($FB, $S): Element {
-                           $BackLink = [
-                               new RawHtml('&#160;'),
-                               ...\array_map(
+                           $BackLink = \array_merge(
+                               [new RawHtml('&#160;')],
+                               \array_map(
                                    function (int $n) use ($F, $FB): Container {
-                                       return new Container([
+                                       return new Container(\array_merge(
+                                           [
                                            new Element(
                                                'a',
                                                [
@@ -137,13 +138,13 @@ final class ParsedownExtra implements StateBearer
                                                    'class' => 'footnote-backref'
                                                ],
                                                [new RawHtml('&#8617;')]
-                                           ),
-                                           ...($n < $FB->inlineRecord($F->title()) ? [new Text(' ')] : [])
-                                       ]);
+                                           )],
+                                           ($n < $FB->inlineRecord($F->title()) ? [new Text(' ')] : [])
+                                       ));
                                    },
                                    ($count = $FB->inlineRecord($F->title())) > 1 ? \range(1, $count) : [1]
                                )
-                           ];
+                           );
 
                            [$StateRenderables, $S] = Parsedown::lines($F->lines(), $S);
 
@@ -154,7 +155,7 @@ final class ParsedownExtra implements StateBearer
                            if ($lastItem instanceof Element && $lastItem->name() === 'p' && $contents = $lastItem->contents()) {
                                $InnerRender[\count($InnerRender) -1] = new Element('p', [], \array_merge($contents, $BackLink));
                            } else {
-                               $InnerRender[] = new Element('p', [], [...$BackLink]);
+                               $InnerRender[] = new Element('p', [], $BackLink);
                            }
 
                            return new Element('li', ['id' => 'fn:'.$F->title()], $InnerRender);
