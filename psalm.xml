@@ -22,13 +22,13 @@
             <errorLevel type="suppress"><directory name="tests" /></errorLevel>
         </UnusedClass>
         <UndefinedInterfaceMethod>
-            <errorLevel type="suppress"><directory name="tests/src" /></errorLevel>
+            <errorLevel type="suppress"><directory name="tests" /></errorLevel>
         </UndefinedInterfaceMethod>
         <PossiblyNullArrayAccess>
-            <errorLevel type="suppress"><directory name="tests/src" /></errorLevel>
+            <errorLevel type="suppress"><directory name="tests" /></errorLevel>
         </PossiblyNullArrayAccess>
         <PossiblyNullReference>
-            <errorLevel type="suppress"><directory name="tests/src" /></errorLevel>
+            <errorLevel type="suppress"><directory name="tests" /></errorLevel>
         </PossiblyNullReference>
     </issueHandlers>
 </psalm>

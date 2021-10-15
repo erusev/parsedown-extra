@@ -2,7 +2,7 @@
 <phpunit bootstrap="vendor/autoload.php" colors="true">
 	<testsuites>
 		<testsuite>
-			<file>test/ParsedownExtraTest.php</file>
+			<file>tests/ParsedownExtraTest.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>
