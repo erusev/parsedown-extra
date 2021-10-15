@@ -1,7 +1,13 @@
 <?php
 
-namespace Erusev\ParsedownExtra;
+namespace Erusev\ParsedownExtra\Features;
 
+use Erusev\Parsedown\Components\Blocks\Header as CoreHeader;
+use Erusev\Parsedown\Components\Blocks\SetextHeader as CoreSetextHeader;
+use Erusev\Parsedown\Components\Inlines\Image as CoreImage;
+use Erusev\Parsedown\Components\Inlines\Link as CoreLink;
+use Erusev\Parsedown\Configurables\BlockTypes;
+use Erusev\Parsedown\Configurables\InlineTypes;
 use Erusev\Parsedown\Html\Renderable;
 use Erusev\Parsedown\Html\Renderables\Container;
 use Erusev\Parsedown\Html\Renderables\Element;
@@ -12,29 +18,36 @@ use Erusev\Parsedown\Parsedown;
 use Erusev\Parsedown\State;
 use Erusev\Parsedown\StateBearer;
 use Erusev\ParsedownExtra\Components\Blocks\Footnote;
+use Erusev\ParsedownExtra\Components\Blocks\Header;
+use Erusev\ParsedownExtra\Components\Blocks\SetextHeader;
+use Erusev\ParsedownExtra\Components\Inlines\Image;
+use Erusev\ParsedownExtra\Components\Inlines\Link;
 use Erusev\ParsedownExtra\Configurables\AbbreviationBook;
 use Erusev\ParsedownExtra\Configurables\FootnoteBook;
-use Erusev\ParsedownExtra\Features\Abbreviations;
-use Erusev\ParsedownExtra\Features\CustomAttributes;
-use Erusev\ParsedownExtra\Features\Definitions;
-use Erusev\ParsedownExtra\Features\Footnotes;
 
-final class ParsedownExtra implements StateBearer
+final class CustomAttributes implements StateBearer
 {
     /** @var State */
     private $State;
 
     public function __construct(StateBearer $StateBearer = null)
     {
-        $StateBearer = Footnotes::from(
-            CustomAttributes::from(
-                Definitions::from(
-                    Abbreviations::from($StateBearer ?? new State)
-                )
-            )
-        );
+        $State = ($StateBearer ?? new State)->state();
 
-        $this->State = $StateBearer->state();
+        $BlockTypes = $State->get(BlockTypes::class)
+            ->replacing(CoreHeader::class, Header::class)
+            ->replacing(CoreSetextHeader::class, SetextHeader::class)
+        ;
+
+        $InlineTypes = $State->get(InlineTypes::class)
+            ->replacing(CoreLink::class, Link::class)
+            ->replacing(CoreImage::class, Image::class)
+        ;
+
+        $this->State = $State
+            ->setting($BlockTypes)
+            ->setting($InlineTypes)
+        ;
     }
 
     public function state(): State

@@ -1,40 +1,48 @@
 <?php
 
-namespace Erusev\ParsedownExtra;
+namespace Erusev\ParsedownExtra\Features;
 
+use Erusev\Parsedown\Configurables\BlockTypes;
+use Erusev\Parsedown\Configurables\InlineTypes;
+use Erusev\Parsedown\Configurables\RenderStack;
 use Erusev\Parsedown\Html\Renderable;
 use Erusev\Parsedown\Html\Renderables\Container;
 use Erusev\Parsedown\Html\Renderables\Element;
 use Erusev\Parsedown\Html\Renderables\RawHtml;
 use Erusev\Parsedown\Html\Renderables\Text;
-use Erusev\Parsedown\Html\TransformableRenderable;
 use Erusev\Parsedown\Parsedown;
 use Erusev\Parsedown\State;
 use Erusev\Parsedown\StateBearer;
 use Erusev\ParsedownExtra\Components\Blocks\Footnote;
-use Erusev\ParsedownExtra\Configurables\AbbreviationBook;
+use Erusev\ParsedownExtra\Components\Inlines\Footnote as InlineFootnote;
 use Erusev\ParsedownExtra\Configurables\FootnoteBook;
-use Erusev\ParsedownExtra\Features\Abbreviations;
-use Erusev\ParsedownExtra\Features\CustomAttributes;
-use Erusev\ParsedownExtra\Features\Definitions;
-use Erusev\ParsedownExtra\Features\Footnotes;
 
-final class ParsedownExtra implements StateBearer
+final class Footnotes implements StateBearer
 {
     /** @var State */
     private $State;
 
     public function __construct(StateBearer $StateBearer = null)
     {
-        $StateBearer = Footnotes::from(
-            CustomAttributes::from(
-                Definitions::from(
-                    Abbreviations::from($StateBearer ?? new State)
-                )
-            )
-        );
+        $State = ($StateBearer ?? new State)->state();
 
-        $this->State = $StateBearer->state();
+        $BlockTypes = $State->get(BlockTypes::class)
+            ->addingMarkedHighPrecedence('[', [Footnote::class])
+        ;
+
+        $InlineTypes = $State->get(InlineTypes::class)
+            ->addingHighPrecedence('[', [InlineFootnote::class])
+        ;
+
+        $RenderStack = $State->get(RenderStack::class)
+            ->push(self::renderFootnotes())
+        ;
+
+        $this->State = $State
+            ->setting($BlockTypes)
+            ->setting($InlineTypes)
+            ->setting($RenderStack)
+        ;
     }
 
     public function state(): State
@@ -46,39 +54,6 @@ final class ParsedownExtra implements StateBearer
     public static function from(StateBearer $StateBearer)
     {
         return new self($StateBearer);
-    }
-
-    /** @return \Closure(Renderable[],State):Renderable[] */
-    public static function expandAbbreviations()
-    {
-        /**
-         * @param Renderable[] $Rs
-         * @param State $S
-         * @return Renderable[] $Rs
-         */
-        return function (array $Rs, State $S): array {
-            $abbrvs = $S->get(AbbreviationBook::class)->all();
-
-            if (empty($abbrvs)) {
-                return $Rs;
-            }
-
-            return \array_map(
-                function (Renderable $R) use ($abbrvs): Renderable {
-                    if ($R instanceof TransformableRenderable) {
-                        foreach ($abbrvs as $abbrv => $meaning) {
-                            $R = $R->replacingAll(
-                                $abbrv,
-                                new Element('abbr', ['title' => $meaning], [new Text($abbrv)])
-                            );
-                        }
-                    }
-
-                    return $R;
-                },
-                $Rs
-            );
-        };
     }
 
     /** @return \Closure(Renderable[],State):Renderable[] */
