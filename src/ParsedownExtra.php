@@ -69,6 +69,12 @@ final class ParsedownExtra implements StateBearer
         return $this->State;
     }
 
+    /** @return self */
+    public static function from(StateBearer $StateBearer)
+    {
+        return new self($StateBearer);
+    }
+
     /** @return \Closure(Renderable[],State):Renderable[] */
     public static function expandAbbreviations()
     {

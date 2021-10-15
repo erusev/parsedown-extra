@@ -17,6 +17,6 @@ class ParsedownExtraTest extends ParsedownTest
 
     protected function initState(string $testName): StateBearer
     {
-        return new ParsedownExtra(parent::initState($testName));
+        return ParsedownExtra::from(parent::initState($testName));
     }
 }
