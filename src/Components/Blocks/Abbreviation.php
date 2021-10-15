@@ -5,10 +5,10 @@ namespace Erusev\ParsedownExtra\Components\Blocks;
 use Erusev\Parsedown\AST\StateRenderable;
 use Erusev\Parsedown\Components\Block;
 use Erusev\Parsedown\Components\StateUpdatingBlock;
-use Erusev\ParsedownExtra\Configurables\AbbreviationBook;
 use Erusev\Parsedown\Html\Renderables\Invisible;
 use Erusev\Parsedown\Parsing\Context;
 use Erusev\Parsedown\State;
+use Erusev\ParsedownExtra\Configurables\AbbreviationBook;
 
 final class Abbreviation implements StateUpdatingBlock
 {

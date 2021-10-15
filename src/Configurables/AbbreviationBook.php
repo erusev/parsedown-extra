@@ -33,6 +33,13 @@ final class AbbreviationBook implements MutableConfigurable
         return $this->book[$abbreviation] ?? null;
     }
 
+    /** @return array<string, string> */
+    public function all()
+    {
+        return $this->book;
+    }
+
+    /** @return self */
     public function isolatedCopy(): self
     {
         return new self($this->book);

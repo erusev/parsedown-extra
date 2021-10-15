@@ -4,9 +4,9 @@ namespace Erusev\ParsedownExtra\Components\Blocks;
 
 use Erusev\Parsedown\AST\Handler;
 use Erusev\Parsedown\AST\StateRenderable;
+use Erusev\Parsedown\Components\AcquisitioningBlock;
 use Erusev\Parsedown\Components\Block;
 use Erusev\Parsedown\Components\Blocks\Paragraph;
-use Erusev\Parsedown\Components\AcquisitioningBlock;
 use Erusev\Parsedown\Components\ContinuableBlock;
 use Erusev\Parsedown\Html\Renderables\Element;
 use Erusev\Parsedown\Html\Renderables\Text;
@@ -55,7 +55,7 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
         State $State = null,
         Block $Block = null
     ) {
-        if (! isset($Block) || ! $Block instanceof Paragraph || $Context->precedingEmptyLines() > 0) {
+        if (! isset($Block) || ! $Block instanceof Paragraph || $Context->precedingEmptyLines() > 1) {
             return null;
         }
 
@@ -65,7 +65,7 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
             return null;
         }
 
-        $secondChar = \substr($text, 1, 2);
+        $secondChar = \substr($text, 1, 1);
 
         if ($secondChar !== ' ' && $secondChar !== "\t") {
             return null;
@@ -92,7 +92,7 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
             $Block,
             [!empty($text) ? Lines::fromTextLines($text, $indentOffset) : Lines::none()],
             false,
-            $Context->line()->indent() + 1 + $afterMarkerSpaces
+            $Context->line()->indent() + 2 + $afterMarkerSpaces
         );
     }
 
@@ -126,10 +126,13 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
         }
 
         if ($indent >= $this->requiredIndent) {
-            $newLines .= $Context->line()->ltrimBodyUpto($this->requiredIndent) . "\n";
+            $newLines .= $Context->line()->ltrimBodyUpto($this->requiredIndent);
 
             $Lis = $this->Lis;
-            $Lis[] = Lines::fromTextLines($newLines, $offset + $this->requiredIndent);
+            $Lis[\count($Lis) -1] = $Lis[\count($Lis) -1]->appendingTextLines(
+                $newLines,
+                $offset
+            );
 
             return new self(
                 $this->StartingBlock,
@@ -144,7 +147,7 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
                 $this->isLoose || $Context->precedingEmptyLines() > 0,
                 $NewDefinitionList->requiredIndent
             );
-        } elseif (! $Context->precedingEmptyLines() > 0) {
+        } elseif (! ($Context->precedingEmptyLines() > 0)) {
             $Lis = $this->Lis;
             $text = $Context->line()->ltrimBodyUpto($this->requiredIndent);
 
@@ -170,25 +173,19 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
     public function stateRenderable()
     {
         return new Handler(
-            /** @return Element */
-            function (State $State) {
+            function (State $State): Element {
                 return new Element(
                     'dl',
                     [],
                     \array_merge(
                         \array_map(
-                            /**
-                             * @param string $term
-                             * @return Element
-                             */
-                            function ($term) {
+                            function (string $term): Element {
                                 return new Element('dt', [], [new Text($term)]);
                             },
                             \explode("\n", $this->StartingBlock->text())
                         ),
                         \array_map(
-                            /** @return Element */
-                            function (Lines $Lines) use ($State) {
+                            function (Lines $Lines) use ($State): Element {
                                 list($StateRenderables, $State) = Parsedown::lines(
                                     $Lines,
                                     $State

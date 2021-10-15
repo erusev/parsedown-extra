@@ -2,400 +2,167 @@
 
 namespace Erusev\ParsedownExtra;
 
-final class ParsedownExtra
+use Erusev\Parsedown\Components\Blocks\Header as CoreHeader;
+use Erusev\Parsedown\Components\Blocks\SetextHeader as CoreSetextHeader;
+use Erusev\Parsedown\Components\Inlines\Image as CoreImage;
+use Erusev\Parsedown\Components\Inlines\Link as CoreLink;
+use Erusev\Parsedown\Configurables\BlockTypes;
+use Erusev\Parsedown\Configurables\InlineTypes;
+use Erusev\Parsedown\Configurables\RenderStack;
+use Erusev\Parsedown\Html\Renderable;
+use Erusev\Parsedown\Html\Renderables\Container;
+use Erusev\Parsedown\Html\Renderables\Element;
+use Erusev\Parsedown\Html\Renderables\RawHtml;
+use Erusev\Parsedown\Html\Renderables\Text;
+use Erusev\Parsedown\Html\TransformableRenderable;
+use Erusev\Parsedown\Parsedown;
+use Erusev\Parsedown\State;
+use Erusev\Parsedown\StateBearer;
+use Erusev\ParsedownExtra\Components\Blocks\Abbreviation;
+use Erusev\ParsedownExtra\Components\Blocks\DefinitionList;
+use Erusev\ParsedownExtra\Components\Blocks\Footnote;
+use Erusev\ParsedownExtra\Components\Blocks\Header;
+use Erusev\ParsedownExtra\Components\Blocks\SetextHeader;
+use Erusev\ParsedownExtra\Components\Inlines\Footnote as InlineFootnote;
+use Erusev\ParsedownExtra\Components\Inlines\Image;
+use Erusev\ParsedownExtra\Components\Inlines\Link;
+use Erusev\ParsedownExtra\Configurables\AbbreviationBook;
+use Erusev\ParsedownExtra\Configurables\FootnoteBook;
+
+final class ParsedownExtra implements StateBearer
 {
-    function __construct()
+    /** @var State */
+    private $State;
+
+    public function __construct(StateBearer $StateBearer = null)
     {
-        $this->BlockTypes[':'] []= 'DefinitionList';
-        $this->BlockTypes['*'] []= 'Abbreviation';
+        $State = ($StateBearer ?? new State)->state();
 
-        # identify footnote definitions before reference definitions
-        array_unshift($this->BlockTypes['['], 'Footnote');
+        $BlockTypes = $State->get(BlockTypes::class)
+            ->addingMarkedLowPrecedence(':', [DefinitionList::class])
+            ->addingMarkedLowPrecedence('*', [Abbreviation::class])
+            ->addingMarkedHighPrecedence('[', [Footnote::class])
+            ->replacing(CoreHeader::class, Header::class)
+            ->replacing(CoreSetextHeader::class, SetextHeader::class)
+        ;
 
-        # identify footnote markers before before links
-        array_unshift($this->InlineTypes['['], 'FootnoteMarker');
+        $InlineTypes = $State->get(InlineTypes::class)
+            ->addingHighPrecedence('[', [InlineFootnote::class])
+            ->replacing(CoreLink::class, Link::class)
+            ->replacing(CoreImage::class, Image::class)
+        ;
+
+        $RenderStack = $State->get(RenderStack::class)
+            ->push(self::renderFootnotes())
+            ->push(self::expandAbbreviations())
+        ;
+
+        $this->State = $State
+            ->setting($BlockTypes)
+            ->setting($InlineTypes)
+            ->setting($RenderStack)
+        ;
     }
 
-    #
-    # ~
-
-    function text($text)
+    public function state(): State
     {
-        $markup = parent::text($text);
-
-        # merge consecutive dl elements
-
-        $markup = preg_replace('/<\/dl>\s+<dl>\s+/', '', $markup);
-
-        # add footnotes
-
-        if (isset($this->DefinitionData['Footnote']))
-        {
-            $Element = $this->buildFootnoteElement();
-
-            $markup .= "\n" . $this->element($Element);
-        }
-
-        return $markup;
+        return $this->State;
     }
 
-    #
-    # Footnote
-
-    protected function blockFootnote($Line)
+    /** @return \Closure(Renderable[],State):Renderable[] */
+    public static function expandAbbreviations()
     {
-        if (preg_match('/^\[\^(.+?)\]:[ ]?(.*)$/', $Line['text'], $matches))
-        {
-            $Block = array(
-                'label' => $matches[1],
-                'text' => $matches[2],
-                'hidden' => true,
+        /**
+         * @param Renderable[] $Rs
+         * @param State $S
+         * @return Renderable[] $Rs
+         */
+        return function (array $Rs, State $S): array {
+            $abbrvs = $S->get(AbbreviationBook::class)->all();
+
+            if (empty($abbrvs)) {
+                return $Rs;
+            }
+
+            return \array_map(
+                function (Renderable $R) use ($abbrvs): Renderable {
+                    if ($R instanceof TransformableRenderable) {
+                        foreach ($abbrvs as $abbrv => $meaning) {
+                            $R = $R->replacingAll(
+                                $abbrv,
+                                new Element('abbr', ['title' => $meaning], [new Text($abbrv)])
+                            );
+                        }
+                    }
+
+                    return $R;
+                },
+                $Rs
             );
-
-            return $Block;
-        }
+        };
     }
 
-    protected function blockFootnoteContinue($Line, $Block)
+    /** @return \Closure(Renderable[],State):Renderable[] */
+    public static function renderFootnotes()
     {
-        if ($Line['text'][0] === '[' and preg_match('/^\[\^(.+?)\]:/', $Line['text']))
-        {
-            return;
-        }
+        /**
+        * @param Renderable[] $Rs
+        * @param State $S
+        * @return Renderable[] $Rs
+        */
+        return function (array $Rs, State $S): array {
+            $FB = $S->get(FootnoteBook::class);
 
-        if (isset($Block['interrupted']))
-        {
-            if ($Line['indent'] >= 4)
-            {
-                $Block['text'] .= "\n\n" . $Line['text'];
-
-                return $Block;
-            }
-        }
-        else
-        {
-            $Block['text'] .= "\n" . $Line['text'];
-
-            return $Block;
-        }
-    }
-
-    protected function blockFootnoteComplete($Block)
-    {
-        $this->DefinitionData['Footnote'][$Block['label']] = array(
-            'text' => $Block['text'],
-            'count' => null,
-            'number' => null,
-        );
-
-        return $Block;
-    }
-
-    #
-    # Header
-
-    protected function blockHeader($Line)
-    {
-        $Block = parent::blockHeader($Line);
-
-        if (! isset($Block)) {
-            return null;
-        }
-
-        if (preg_match('/[ #]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
-        {
-            $attributeString = $matches[1][0];
-
-            $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
-
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
-        }
-
-        return $Block;
-    }
-
-    #
-    # Markup
-
-    protected function blockMarkupComplete($Block)
-    {
-        if ( ! isset($Block['void']))
-        {
-            $Block['markup'] = $this->processTag($Block['markup']);
-        }
-
-        return $Block;
-    }
-
-    #
-    # Setext
-
-    protected function blockSetextHeader($Line, array $Block = null)
-    {
-        $Block = parent::blockSetextHeader($Line, $Block);
-
-        if (! isset($Block)) {
-            return null;
-        }
-
-        if (preg_match('/[ ]*{('.$this->regexAttribute.'+)}[ ]*$/', $Block['element']['text'], $matches, PREG_OFFSET_CAPTURE))
-        {
-            $attributeString = $matches[1][0];
-
-            $Block['element']['attributes'] = $this->parseAttributeData($attributeString);
-
-            $Block['element']['text'] = substr($Block['element']['text'], 0, $matches[0][1]);
-        }
-
-        return $Block;
-    }
-
-    #
-    # Inline Elements
-    #
-
-    #
-    # Footnote Marker
-
-    protected function inlineFootnoteMarker($Excerpt)
-    {
-        if (preg_match('/^\[\^(.+?)\]/', $Excerpt['text'], $matches))
-        {
-            $name = $matches[1];
-
-            if ( ! isset($this->DefinitionData['Footnote'][$name]))
-            {
-                return;
+            if (empty($FB->all())) {
+                return $Rs;
             }
 
-            $this->DefinitionData['Footnote'][$name]['count'] ++;
+            return \array_merge($Rs, [new Element(
+                'div',
+                ['class' => 'footnotes'],
+                [
+                   Element::selfClosing('hr', []),
+                   new Element('ol', [], \array_map(
+                       function (Footnote $F) use ($FB, $S): Element {
+                           $BackLink = [
+                               new RawHtml('&#160;'),
+                               ...\array_map(
+                                   function (int $n) use ($F, $FB): Container {
+                                       return new Container([
+                                           new Element(
+                                               'a',
+                                               [
+                                                   'href' => '#fnref'.\strval($n).':'.$F->title(),
+                                                   'rev' => 'footnote',
+                                                   'class' => 'footnote-backref'
+                                               ],
+                                               [new RawHtml('&#8617;')]
+                                           ),
+                                           ...($n < $FB->inlineRecord($F->title()) ? [new Text(' ')] : [])
+                                       ]);
+                                   },
+                                   ($count = $FB->inlineRecord($F->title())) > 1 ? \range(1, $count) : [1]
+                               )
+                           ];
 
-            if ( ! isset($this->DefinitionData['Footnote'][$name]['number']))
-            {
-                $this->DefinitionData['Footnote'][$name]['number'] = ++ $this->footnoteCount; # » &
-            }
+                           [$StateRenderables, $S] = Parsedown::lines($F->lines(), $S);
 
-            $Element = array(
-                'name' => 'sup',
-                'attributes' => array('id' => 'fnref'.$this->DefinitionData['Footnote'][$name]['count'].':'.$name),
-                'handler' => 'element',
-                'text' => array(
-                    'name' => 'a',
-                    'attributes' => array('href' => '#fn:'.$name, 'class' => 'footnote-ref'),
-                    'text' => $this->DefinitionData['Footnote'][$name]['number'],
-                ),
-            );
+                           $InnerRender = $S->applyTo($StateRenderables);
 
-            return array(
-                'extent' => strlen($matches[0]),
-                'element' => $Element,
-            );
-        }
+                           $lastItem = $InnerRender[\count($InnerRender) -1];
+
+                           if ($lastItem instanceof Element && $lastItem->name() === 'p' && $contents = $lastItem->contents()) {
+                               $InnerRender[\count($InnerRender) -1] = new Element('p', [], \array_merge($contents, $BackLink));
+                           } else {
+                               $InnerRender[] = new Element('p', [], [...$BackLink]);
+                           }
+
+                           return new Element('li', ['id' => 'fn:'.$F->title()], $InnerRender);
+                       },
+                       $FB->all()
+                   ))
+               ]
+            )]);
+        };
     }
-
-    private $footnoteCount = 0;
-
-    #
-    # Link
-
-    protected function inlineLink($Excerpt)
-    {
-        $Link = parent::inlineLink($Excerpt);
-
-        if (! isset($Link)) {
-            return null;
-        }
-
-        $remainder = substr($Excerpt['text'], $Link['extent']);
-
-        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
-        {
-            $Link['element']['attributes'] += $this->parseAttributeData($matches[1]);
-
-            $Link['extent'] += strlen($matches[0]);
-        }
-
-        return $Link;
-    }
-
-    #
-    # ~
-    #
-
-    protected function unmarkedText($text)
-    {
-        $text = parent::unmarkedText($text);
-
-        if (isset($this->DefinitionData['Abbreviation']))
-        {
-            foreach ($this->DefinitionData['Abbreviation'] as $abbreviation => $meaning)
-            {
-                $pattern = '/\b'.preg_quote($abbreviation, '/').'\b/';
-
-                $text = preg_replace($pattern, '<abbr title="'.$meaning.'">'.$abbreviation.'</abbr>', $text);
-            }
-        }
-
-        return $text;
-    }
-
-    protected function buildFootnoteElement()
-    {
-        $Element = array(
-            'name' => 'div',
-            'attributes' => array('class' => 'footnotes'),
-            'handler' => 'elements',
-            'text' => array(
-                array(
-                    'name' => 'hr',
-                ),
-                array(
-                    'name' => 'ol',
-                    'handler' => 'elements',
-                    'text' => array(),
-                ),
-            ),
-        );
-
-        uasort($this->DefinitionData['Footnote'], 'self::sortFootnotes');
-
-        foreach ($this->DefinitionData['Footnote'] as $definitionId => $DefinitionData)
-        {
-            if ( ! isset($DefinitionData['number']))
-            {
-                continue;
-            }
-
-            $text = $DefinitionData['text'];
-
-            $text = parent::text($text);
-
-            $numbers = range(1, $DefinitionData['count']);
-
-            $backLinksMarkup = '';
-
-            foreach ($numbers as $number)
-            {
-                $backLinksMarkup .= ' <a href="#fnref'.$number.':'.$definitionId.'" rev="footnote" class="footnote-backref">&#8617;</a>';
-            }
-
-            $backLinksMarkup = substr($backLinksMarkup, 1);
-
-            if (substr($text, - 4) === '</p>')
-            {
-                $backLinksMarkup = '&#160;'.$backLinksMarkup;
-
-                $text = substr_replace($text, $backLinksMarkup.'</p>', - 4);
-            }
-            else
-            {
-                $text .= "\n".'<p>'.$backLinksMarkup.'</p>';
-            }
-
-            $Element['text'][1]['text'] []= array(
-                'name' => 'li',
-                'attributes' => array('id' => 'fn:'.$definitionId),
-                'rawHtml' => "\n".$text."\n",
-            );
-        }
-
-        return $Element;
-    }
-
-    # ~
-
-    protected function parseAttributeData($attributeString)
-    {
-        $Data = array();
-
-        $attributes = preg_split('/[ ]+/', $attributeString, - 1, PREG_SPLIT_NO_EMPTY);
-
-        foreach ($attributes as $attribute)
-        {
-            if ($attribute[0] === '#')
-            {
-                $Data['id'] = substr($attribute, 1);
-            }
-            else # "."
-            {
-                $classes []= substr($attribute, 1);
-            }
-        }
-
-        if (isset($classes))
-        {
-            $Data['class'] = implode(' ', $classes);
-        }
-
-        return $Data;
-    }
-
-    # ~
-
-    protected function processTag($elementMarkup) # recursive
-    {
-        # http://stackoverflow.com/q/1148928/200145
-        libxml_use_internal_errors(true);
-
-        $DOMDocument = new DOMDocument;
-
-        # http://stackoverflow.com/q/11309194/200145
-        $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
-
-        # http://stackoverflow.com/q/4879946/200145
-        $DOMDocument->loadHTML($elementMarkup);
-        $DOMDocument->removeChild($DOMDocument->doctype);
-        $DOMDocument->replaceChild($DOMDocument->firstChild->firstChild->firstChild, $DOMDocument->firstChild);
-
-        $elementText = '';
-
-        if ($DOMDocument->documentElement->getAttribute('markdown') === '1')
-        {
-            foreach ($DOMDocument->documentElement->childNodes as $Node)
-            {
-                $elementText .= $DOMDocument->saveHTML($Node);
-            }
-
-            $DOMDocument->documentElement->removeAttribute('markdown');
-
-            $elementText = "\n".$this->text($elementText)."\n";
-        }
-        else
-        {
-            foreach ($DOMDocument->documentElement->childNodes as $Node)
-            {
-                $nodeMarkup = $DOMDocument->saveHTML($Node);
-
-                if ($Node instanceof DOMElement and ! in_array($Node->nodeName, $this->textLevelElements))
-                {
-                    $elementText .= $this->processTag($nodeMarkup);
-                }
-                else
-                {
-                    $elementText .= $nodeMarkup;
-                }
-            }
-        }
-
-        # because we don't want for markup to get encoded
-        $DOMDocument->documentElement->nodeValue = 'placeholder\x1A';
-
-        $markup = $DOMDocument->saveHTML($DOMDocument->documentElement);
-        $markup = str_replace('placeholder\x1A', $elementText, $markup);
-
-        return $markup;
-    }
-
-    # ~
-
-    protected function sortFootnotes($A, $B) # callback
-    {
-        return $A['number'] - $B['number'];
-    }
-
-    #
-    # Fields
-    #
-
-    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
 }
