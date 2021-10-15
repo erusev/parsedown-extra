@@ -43,7 +43,7 @@ jobs:
       - name: Run Tests
         run: |
           composer update --prefer-dist --no-interaction --no-progress
-          vendor/bin/roave-infection-static-analysis-plugin --show-mutations --threads=4 --min-msi=60 --min-covered-msi=70
+          vendor/bin/roave-infection-static-analysis-plugin --show-mutations --threads=4 --min-msi=70 --min-covered-msi=85
 
   static-analysis:
     name: Code Format and Static Analysis
