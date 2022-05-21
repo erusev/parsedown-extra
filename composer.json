@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "erusev/parsedown": "^2.0.0|2.0.x@dev",
+        "erusev/parsedown": "^2.0.0|^2.0.0-beta-1",
         "php": "^7.1||^8.0",
         "ext-mbstring": "*"
     },
