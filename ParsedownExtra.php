@@ -508,7 +508,7 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
-        uasort($this->DefinitionData['Footnote'], static::class . '::sortFootnotes');
+        uasort($this->DefinitionData['Footnote'], [$this, 'sortFootnotes']);
 
         foreach ($this->DefinitionData['Footnote'] as $definitionId => $DefinitionData)
         {
