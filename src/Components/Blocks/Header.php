@@ -51,7 +51,7 @@ final class Header implements Block
     public static function build(
         Context $Context,
         State $State,
-        Block $Block = null
+        ?Block $Block = null
     ) {
         $BaseHeader = BaseHeader::build($Context, $State, $Block);
 
