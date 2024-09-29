@@ -1,5 +1,3 @@
-> You might also like [Nota](https://nota.md/?ref=parsedown-extra) - our Markdown editor for the Desktop.
-
 ## Parsedown Extra
 
 An extension of [Parsedown](http://parsedown.org) that adds support for [Markdown Extra](https://michelf.ca/projects/php-markdown/extra/).
