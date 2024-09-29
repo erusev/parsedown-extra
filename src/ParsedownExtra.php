@@ -14,7 +14,7 @@ final class ParsedownExtra implements StateBearer
     /** @var State */
     private $State;
 
-    public function __construct(StateBearer $StateBearer = null)
+    public function __construct(?StateBearer $StateBearer = null)
     {
         $StateBearer = Abbreviations::from($StateBearer ?? new State);
         $StateBearer = Definitions::from($StateBearer);

@@ -28,7 +28,7 @@ final class Abbreviation implements StateUpdatingBlock
     public static function build(
         Context $Context,
         State $State,
-        Block $Block = null
+        ?Block $Block = null
     ) {
         if (\preg_match(
             '/^\*\[(.+?)\]:[ ]*(.+?)[ ]*$/',

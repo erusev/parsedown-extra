@@ -51,8 +51,8 @@ final class DefinitionList implements ContinuableBlock, AcquisitioningBlock
      */
     public static function build(
         Context $Context,
-        State $State = null,
-        Block $Block = null
+        ?State $State = null,
+        ?Block $Block = null
     ) {
         if (! isset($Block) || ! $Block instanceof Paragraph || $Context->precedingEmptyLines() > 1) {
             return null;
