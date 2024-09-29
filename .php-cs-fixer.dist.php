@@ -10,9 +10,7 @@ $rules = [
     'array_syntax' => [
         'syntax' => 'short',
     ],
-    'braces' => [
-        'allow_single_line_closure' => true,
-    ],
+    'blank_lines_before_namespace' => true,
     'logical_operators' => true,
     'native_constant_invocation' => [
         'fix_built_in' => true,
@@ -24,7 +22,6 @@ $rules = [
     'ordered_imports' => [
         'sort_algorithm' => 'alpha',
     ],
-    'single_blank_line_before_namespace' => true,
     'strict_comparison' => true,
     'strict_param' => true,
     'whitespace_after_comma_in_array' => true,
