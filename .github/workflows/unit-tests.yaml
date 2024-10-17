@@ -33,4 +33,5 @@ jobs:
 
       - name: Run tests
         run: |
+          ls -al vendor/erusev/parsedown
           vendor/bin/phpunit
