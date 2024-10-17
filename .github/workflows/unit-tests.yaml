@@ -29,7 +29,9 @@ jobs:
           php-version: '${{ matrix.php }}'
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction
+        run: |
+          composer install --prefer-dist --no-interaction
+          composer dump-autoload --optimize
 
       - name: Run tests
         run: |
