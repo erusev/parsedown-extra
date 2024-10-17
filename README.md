@@ -1,4 +1,4 @@
-> You might also like [Caret](http://caret.io?ref=parsedown) - our Markdown editor for the Desktop.
+> You might also like [Nota](https://nota.md/?ref=parsedown-extra) - our Markdown editor for the Desktop.
 
 ## Parsedown Extra
 
@@ -24,7 +24,7 @@ echo $Extra->text('# Header {.sth}'); # prints: <h1 class="sth">Header</h1>
 
 **Who uses Parsedown Extra?**
 
-[October CMS](http://octobercms.com/), [Bolt CMS](http://bolt.cm/), [Kirby CMS](http://getkirby.com/), [Grav CMS](http://getgrav.org/), [Statamic CMS](http://www.statamic.com/) and [more](https://www.versioneye.com/php/erusev:parsedown-extra/references).
+[October CMS](https://octobercms.com/), [Winter CMS](https://wintercms.com/), [Bolt CMS](https://boltcms.io/), [Kirby CMS](https://getkirby.com/), [Grav CMS](https://getgrav.org/), [Statamic CMS](https://www.statamic.com/) and [more](https://www.versioneye.com/php/erusev:parsedown-extra/references).
 
 **How can I help?**
 
