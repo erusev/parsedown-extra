@@ -29,11 +29,8 @@ jobs:
           php-version: '${{ matrix.php }}'
 
       - name: Install dependencies
-        run: |
-          composer install --prefer-dist --no-interaction
-          composer dump-autoload --optimize
+        run: composer install --prefer-dist --no-interaction
 
       - name: Run tests
         run: |
           vendor/bin/phpunit
-          vendor/bin/phpunit vendor/erusev/parsedown/test/CommonMarkTestWeak.php || true
