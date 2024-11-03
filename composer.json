@@ -9,20 +9,23 @@
         {
             "name": "Emanuil Rusev",
             "email": "hello@erusev.com",
-            "homepage": "http://erusev.com"
+            "homepage": "https://erusev.com"
         }
     ],
     "require": {
-        "erusev/parsedown": "^1.8.0|^1.8.0-beta-4",
-        "php": ">=5.3.6",
+        "erusev/parsedown": "dev-master",
         "ext-dom": "*",
-        "ext-mbstring": "*"
+        "ext-libxml": "*",
+        "ext-mbstring": "*",
+        "php": ">=7.1"
     },
     "require-dev": {
-        "phpunit/phpunit": "^4.8.35"
+        "phpunit/phpunit": "^7.5|^8.5|^9.6"
     },
     "autoload": {
-        "psr-0": {"ParsedownExtra": ""}
+        "psr-0": {
+            "ParsedownExtra": ""
+        }
     },
     "autoload-dev": {
         "psr-0": {
