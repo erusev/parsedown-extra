@@ -508,7 +508,7 @@ class ParsedownExtra extends Parsedown
             ),
         );
 
-        uasort($this->DefinitionData['Footnote'], 'self::sortFootnotes');
+        uasort($this->DefinitionData['Footnote'], [$this, 'sortFootnotes']);
 
         foreach ($this->DefinitionData['Footnote'] as $definitionId => $DefinitionData)
         {
@@ -625,7 +625,12 @@ class ParsedownExtra extends Parsedown
         $DOMDocument = new DOMDocument;
 
         # http://stackoverflow.com/q/11309194/200145
-        $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
+        # PHP 8.2+ fix: mb_convert_encoding with HTML-ENTITIES is deprecated
+        $elementMarkup = mb_encode_numericentity(
+            $elementMarkup,
+            [0x80, 0x10FFFF, 0, ~0],
+            'UTF-8'
+        );
 
         # http://stackoverflow.com/q/4879946/200145
         $DOMDocument->loadHTML($elementMarkup);
