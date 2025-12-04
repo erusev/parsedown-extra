@@ -1,5 +1,6 @@
 {
     "name": "erusev/parsedown-extra",
+    "version": "1.8.0",
     "description": "An extension of Parsedown that adds support for Markdown Extra.",
     "keywords": ["markdown", "markdown extra", "parser", "parsedown"],
     "homepage": "https://github.com/erusev/parsedown-extra",
