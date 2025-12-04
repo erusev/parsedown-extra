@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "erusev/parsedown": "^1.7.4",
+        "erusev/parsedown": "^1.7.4 || ^1.8.0",
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-mbstring": "*",
