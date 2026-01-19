@@ -1,4 +1,13 @@
 ## Parsedown Extra
+### Maintenance fork by DigitalSorceress
+
+**PLEASE NOTE**
+I am not the original creator, but I ran into a deprecation for php 8.5.2 that I needed to fix. I made this branch so I could do a pull request back to the original site
+
+~DigitalSorceress
+
+
+## Original Readme (intact)
 
 An extension of [Parsedown](http://parsedown.org) that adds support for [Markdown Extra](https://michelf.ca/projects/php-markdown/extra/).
 
