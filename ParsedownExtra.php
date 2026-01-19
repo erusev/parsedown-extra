@@ -625,7 +625,10 @@ class ParsedownExtra extends Parsedown
         $DOMDocument = new DOMDocument;
 
         # http://stackoverflow.com/q/11309194/200145
-        $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
+        # $elementMarkup = mb_convert_encoding($elementMarkup, 'HTML-ENTITIES', 'UTF-8');
+        # The above is throwing Deprecation warnings in PHP 8.5 (probably others)
+        # Found this fix https://www.php.net/manual/en/function.mb-convert-encoding.php#127529
+        $elementMarkup = mb_encode_numericentity( htmlentities( $elementMarkup, ENT_QUOTES, 'UTF-8' ), [0x80, 0x10FFFF, 0, ~0], 'UTF-8' );
 
         # http://stackoverflow.com/q/4879946/200145
         $DOMDocument->loadHTML($elementMarkup);
