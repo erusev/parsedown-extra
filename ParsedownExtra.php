@@ -17,15 +17,15 @@ class ParsedownExtra extends Parsedown
 {
     # ~
 
-    const version = '0.8.0';
+    const version = '0.9.0';
 
     # ~
 
     function __construct()
     {
-        if (version_compare(parent::version, '1.7.1') < 0)
+        if (version_compare(parent::version, '1.8.0') < 0)
         {
-            throw new Exception('ParsedownExtra requires a later version of Parsedown');
+            throw new Exception('ParsedownExtra requires Parsedown 1.8.0 or later');
         }
 
         $this->BlockTypes[':'] []= 'DefinitionList';
