@@ -410,6 +410,26 @@ class ParsedownExtra extends Parsedown
         return $Link;
     }
 
+    /**
+     * Allows for adding custom attributes to images like `width` or `height`.
+     *
+     * @param array $Excerpt - The current line's data.
+     * @return array|void
+     */
+    protected function inlineImage($Excerpt){
+        $img = parent::inlineImage($Excerpt);
+
+        $remainder = substr($Excerpt['text'], $img['extent']);
+
+        if (preg_match('/^[ ]*{('.$this->regexAttribute.'+)}/', $remainder, $matches))
+        {
+            $img['element']['attributes'] += $this->parseAttributeData($matches[1]);
+            $img['extent'] += strlen($matches[0]);
+        }
+
+        return $img;
+    }
+
     #
     # ~
     #
@@ -593,7 +613,10 @@ class ParsedownExtra extends Parsedown
     {
         $Data = array();
 
-        $attributes = preg_split('/[ ]+/', $attributeString, - 1, PREG_SPLIT_NO_EMPTY);
+        preg_match_all('/[^\s"]+(?:"[^"]*")?/', $attributeString, $attributes);
+
+        if( count($attributes) ) $attributes = $attributes[0];
+        else return $Data;
 
         foreach ($attributes as $attribute)
         {
@@ -601,9 +624,15 @@ class ParsedownExtra extends Parsedown
             {
                 $Data['id'] = substr($attribute, 1);
             }
-            else # "."
+            elseif ( $attribute[0] === '.' )
             {
                 $classes []= substr($attribute, 1);
+            }
+            elseif ( strpos($attribute, '=') )
+            {
+                preg_match('#([\w-]+)="?([\D\w-]+)"?#', $attribute, $match);
+
+                if( !empty($match) ) $Data[$match[1]] = $match[2];
             }
         }
 
@@ -686,5 +715,5 @@ class ParsedownExtra extends Parsedown
     # Fields
     #
 
-    protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
+    protected $regexAttribute = '((?:[.#:;=\-"\'\s\w]+))[^}]?';
 }
