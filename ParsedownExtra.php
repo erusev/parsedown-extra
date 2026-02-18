@@ -28,6 +28,12 @@ class ParsedownExtra extends Parsedown
             throw new Exception('ParsedownExtra requires Parsedown 1.8.0 or later');
         }
 
+        $this->inlineMarkerList .= '+';
+        $this->inlineMarkerList .= '=';
+        $this->InlineTypes['+'] = ['Ins'];
+        $this->InlineTypes['='] = ['Mark'];
+        $this->InlineTypes['^'] = ['Superscript'];
+        $this->InlineTypes['~'] = ['Subscript'];
         $this->BlockTypes[':'] []= 'DefinitionList';
         $this->BlockTypes['*'] []= 'Abbreviation';
 
@@ -687,4 +693,80 @@ class ParsedownExtra extends Parsedown
     #
 
     protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
+    
+    // Mark
+    protected function inlineMark($Excerpt)
+    {
+        if (preg_match('/^==(.+?)==/s', $Excerpt['text'], $matches)) {
+            return [
+                'extent'  => strlen($matches[0]),
+                'element' => [
+                    'name'    => 'mark',
+                    'handler' => 'line',
+                    'text'    => $matches[1],
+                ],
+            ];
+        }
+    }
+
+     // Inserted Text
+     protected function inlineIns($Excerpt)
+     {
+         if (preg_match('/^\++(.+?)\++/', $Excerpt['text'], $matches)) {
+             return [
+                 'extent'  => strlen($matches[0]),
+                 'element' => [
+                     'name'    => 'ins',
+                     'handler' => 'line',
+                     'text'    => $matches[1],
+                 ],
+             ];
+         }
+     }  
+     
+    // Subscript     
+    protected function inlineSubscript($Excerpt)
+    {
+        if ( ! isset($Excerpt['text'][1]))
+        {
+            return;
+        }
+        $marker = $Excerpt['text'][0];
+        if ($Excerpt['text'][1] === $marker and preg_match('/^~~(?=\S)(.+?)(?<=\S)~~/', $Excerpt['text'], $matches))
+        {
+            $emphasis = 'del';
+        }
+        elseif (preg_match('/^~(?=\S)(.+?)(?=\S)~/', $Excerpt['text'], $matches))
+        {
+            $emphasis = 'sub';
+        }
+        else
+        {
+            return;
+        }
+        return [
+            'extent'  => strlen($matches[0]),
+            'element' => [
+                'name'    => 'sub',
+                'handler' => 'line',
+                'text'    => $matches[1],
+            ],
+        ];
+    }
+    
+    // Superscript
+    protected function inlineSuperscript($Excerpt)
+    {
+        if (preg_match('/^\^(.+?)\^/', $Excerpt['text'], $matches))
+        {
+            return [
+                'extent'  => strlen($matches[0]),
+                'element' => [
+                    'name'    => 'sup',
+                    'handler' => 'line',
+                    'text'    => $matches[1],
+                ],
+            ];
+        }
+    }
 }
