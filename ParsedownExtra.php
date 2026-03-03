@@ -545,7 +545,7 @@ class ParsedownExtra extends Parsedown
 
             $n = count($textElements) -1;
 
-            if ($textElements[$n]['name'] === 'p')
+            if (isset($textElements[$n]['name']) && $textElements[$n]['name'] === 'p')
             {
                 $backLinkElements = array_merge(
                     array(
